@@ -8,8 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         layout = PanelLayout.from(screen: NSScreen.main ?? NSScreen.screens.first)
 
-        let snapshot = WeatherSnapshot.sample
-        let rootView = NotchWeatherView(snapshot: snapshot, layout: layout) { _ in }
+        let rootView = WeatherRootView(layout: layout)
 
         let panel = NotchPanel(contentRect: .zero)
         panel.contentView = NSHostingView(rootView: rootView)

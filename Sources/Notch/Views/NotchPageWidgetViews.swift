@@ -155,7 +155,7 @@ struct NotchPlaceholderWidgetView: View {
 
     private var badgeOne: String {
         switch page {
-        case .stocks: return "AAPL"
+        case .markets: return "AAPL"
         case .tokenSpend: return "Anthropic"
         default: return page.title
         }
@@ -163,7 +163,7 @@ struct NotchPlaceholderWidgetView: View {
 
     private var badgeTwo: String {
         switch page {
-        case .stocks: return "MSFT"
+        case .markets: return "MSFT"
         case .tokenSpend: return "Today"
         default: return "More"
         }

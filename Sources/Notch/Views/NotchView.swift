@@ -104,8 +104,8 @@ struct NotchView: View {
                     onLocationRequest: onLocationRequest
                 )
                 .transition(pageSwapTransition)
-            case .stocks:
-                NotchStocksWidgetView(
+            case .markets:
+                NotchMarketsWidgetView(
                     layout: layout,
                     isExpanded: isExpanded,
                     presentationProgress: presentationProgress,

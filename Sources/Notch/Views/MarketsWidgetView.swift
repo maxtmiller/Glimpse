@@ -276,7 +276,7 @@ struct MarketAssetRangeMetrics {
     let volumeLabel: String
 }
 
-struct StockMarketSnapshot {
+struct MarketSnapshot {
     let updatedAt: Date
     let sourceBadge: String
     let selectedAssetID: String
@@ -290,7 +290,7 @@ struct StockMarketSnapshot {
         asset(id: "sp500")
     }
 
-    static let preview: StockMarketSnapshot = {
+    static let preview: MarketSnapshot = {
         func asset(
             _ id: String,
             symbol: String,
@@ -519,7 +519,7 @@ struct StockMarketSnapshot {
             sparkline: [505.4, 506.8, 507.2, 507.9, 509.4, 509.1, 510.5, 511.0, 511.9, 512.8, 513.4, 512.7]
         )
 
-        return StockMarketSnapshot(
+        return MarketSnapshot(
             updatedAt: Date(),
             sourceBadge: "DEMO",
             selectedAssetID: sp500.id,
@@ -541,13 +541,13 @@ struct StockMarketSnapshot {
     }()
 }
 
-struct NotchStocksWidgetView: View {
+struct NotchMarketsWidgetView: View {
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
     @Binding var selectedPage: NotchPage
 
-    @State private var selectedAssetID = StockMarketSnapshot.preview.selectedAssetID
+    @State private var selectedAssetID = MarketSnapshot.preview.selectedAssetID
     @State private var selectedRange: MarketTimeRange = .day
     @State private var selectedDisplayCurrency: MarketDisplayCurrency = .usd
     @State private var isHomeButtonHovered = false
@@ -703,7 +703,7 @@ struct NotchStocksWidgetView: View {
         .onAppear { marketStore.start() }
     }
 
-    private var snapshot: StockMarketSnapshot {
+    private var snapshot: MarketSnapshot {
         marketStore.snapshot
     }
 

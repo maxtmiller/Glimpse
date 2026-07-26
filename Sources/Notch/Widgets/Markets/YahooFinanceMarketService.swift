@@ -34,7 +34,7 @@ enum YahooFinanceMarketService {
         let close: [Double?]?
     }
 
-    static func fetchSnapshot(from preview: StockMarketSnapshot) async throws -> StockMarketSnapshot {
+    static func fetchSnapshot(from preview: MarketSnapshot) async throws -> MarketSnapshot {
         let assets = await withTaskGroup(of: (String, MarketAsset?).self, returning: [String: MarketAsset].self) { group in
             for asset in preview.assets {
                 group.addTask {
@@ -55,7 +55,7 @@ enum YahooFinanceMarketService {
             throw URLError(.cannotLoadFromNetwork)
         }
 
-        return StockMarketSnapshot(
+        return MarketSnapshot(
             updatedAt: Date(),
             sourceBadge: "YAHOO",
             selectedAssetID: preview.selectedAssetID,

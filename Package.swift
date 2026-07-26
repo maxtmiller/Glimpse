@@ -10,9 +10,15 @@ let package = Package(
     products: [
         .executable(name: "Notch", targets: ["Notch"])
     ],
+    dependencies: [
+        .package(url: "https://github.com/Lakr233/SkyLightWindow", from: "1.0.0")
+    ],
     targets: [
         .executableTarget(
             name: "Notch",
+            dependencies: [
+                .product(name: "SkyLightWindow", package: "SkyLightWindow")
+            ],
             path: "Sources/Notch"
         )
     ]

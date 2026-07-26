@@ -133,6 +133,7 @@ struct MarketAsset: Identifiable {
     let sparkline: [Double]
     let accent: Color
     let note: String
+    let historicalSparklines: [MarketTimeRange: [Double]]
 
     var isPositive: Bool {
         change >= 0
@@ -179,35 +180,14 @@ struct MarketAsset: Identifiable {
     }
 
     func rangeMetrics(for range: MarketTimeRange, displayCurrency: MarketDisplayCurrency) -> MarketAssetRangeMetrics {
-        let factor: Double
-        let volumeFactor: Double
-
-        switch range {
-        case .day:
-            factor = 1.0
-            volumeFactor = 1.0
-        case .week:
-            factor = 1.018
-            volumeFactor = 2.2
-        case .month:
-            factor = 1.042
-            volumeFactor = 5.8
-        case .year:
-            factor = 1.095
-            volumeFactor = 13.5
-        case .allTime:
-            factor = 1.18
-            volumeFactor = 24.0
-        }
-
-        let highValue = max(dayHigh, price * factor)
-        let lowValue = min(dayLow, price / factor)
-        let volumeValue = formattedVolumeLabel(multiplier: volumeFactor)
+        let values = sparkline(for: range)
+        let highValue = values.max() ?? dayHigh
+        let lowValue = values.min() ?? dayLow
 
         return MarketAssetRangeMetrics(
             highLabel: formattedValue(highValue, displayCurrency: displayCurrency),
             lowLabel: formattedValue(lowValue, displayCurrency: displayCurrency),
-            volumeLabel: volumeValue
+            volumeLabel: volumeLabel
         )
     }
 
@@ -216,22 +196,11 @@ struct MarketAsset: Identifiable {
     }
 
     func performance(for range: MarketTimeRange, displayCurrency: MarketDisplayCurrency) -> MarketAssetPerformance {
-        let multiplier: Double
-        switch range {
-        case .day:
-            multiplier = 1.0
-        case .week:
-            multiplier = 2.0
-        case .month:
-            multiplier = 4.0
-        case .year:
-            multiplier = 10.0
-        case .allTime:
-            multiplier = 20.0
-        }
-
-        let adjustedPercent = changePercent * multiplier
-        let adjustedChange = price * adjustedPercent / 100.0
+        let values = sparkline(for: range)
+        let startingPrice = values.first ?? price
+        let endingPrice = values.last ?? price
+        let adjustedChange = endingPrice - startingPrice
+        let adjustedPercent = startingPrice == 0 ? 0 : (adjustedChange / startingPrice) * 100.0
 
         return MarketAssetPerformance(
             change: convertedCurrencyValue(adjustedChange, displayCurrency: displayCurrency),
@@ -240,39 +209,7 @@ struct MarketAsset: Identifiable {
     }
 
     func sparkline(for range: MarketTimeRange) -> [Double] {
-        guard sparkline.count > 1 else { return sparkline }
-        switch range {
-        case .day:
-            return sparkline
-        case .week:
-            return adjustedSparkline(scale: 1.02, drift: 0.10, wave: 0.06, points: 12)
-        case .month:
-            return adjustedSparkline(scale: 1.05, drift: 0.24, wave: 0.10, points: 14)
-        case .year:
-            return adjustedSparkline(scale: 1.10, drift: 0.42, wave: 0.14, points: 16)
-        case .allTime:
-            return adjustedSparkline(scale: 1.18, drift: 0.65, wave: 0.18, points: 18)
-        }
-    }
-
-    private func adjustedSparkline(scale: Double, drift: Double, wave: Double, points: Int) -> [Double] {
-        let base = sparkline
-        let start = base.first ?? 0
-        let end = base.last ?? start
-        let direction = end >= start ? 1.0 : -1.0
-        let strideCount = max(points, 2)
-
-        return (0..<strideCount).map { index in
-            let t = Double(index) / Double(strideCount - 1)
-            let basePosition = t * Double(base.count - 1)
-            let lowerIndex = Int(basePosition.rounded(.down))
-            let upperIndex = min(lowerIndex + 1, base.count - 1)
-            let interpolation = basePosition - Double(lowerIndex)
-            let baseValue = base[lowerIndex] + ((base[upperIndex] - base[lowerIndex]) * interpolation)
-            let driftValue = direction * abs(end - start) * drift * t
-            let waveValue = sin(t * .pi * 2) * abs(end - start) * wave * (1 - (t * 0.35))
-            return (baseValue * scale) + driftValue + waveValue
-        }
+        historicalSparklines[range] ?? sparkline
     }
 
     private func formattedValue(_ value: Double, displayCurrency: MarketDisplayCurrency) -> String {
@@ -384,7 +321,8 @@ struct StockMarketSnapshot {
                 volumeLabel: volume,
                 sparkline: sparkline,
                 accent: accent,
-                note: note
+                note: note,
+                historicalSparklines: [:]
             )
         }
 
@@ -583,7 +521,7 @@ struct StockMarketSnapshot {
 
         return StockMarketSnapshot(
             updatedAt: Date(),
-            sourceBadge: "FMP",
+            sourceBadge: "DEMO",
             selectedAssetID: sp500.id,
             assets: [
                 gold,
@@ -615,8 +553,7 @@ struct NotchStocksWidgetView: View {
     @State private var isHomeButtonHovered = false
     @State private var isSettingsButtonHovered = false
     @State private var hoveredAssetID: String?
-
-    private let snapshot = StockMarketSnapshot.preview
+    @StateObject private var marketStore = MarketStore()
 
     var body: some View {
         NotchWidgetChrome(
@@ -674,6 +611,8 @@ struct NotchStocksWidgetView: View {
                     }
 
                     if isExpanded {
+                        NotchSummaryBadge(text: snapshot.sourceBadge)
+
                         MarketCurrencySummary(
                             currency: selectedDisplayCurrency,
                             selectedRange: selectedRange,
@@ -731,7 +670,7 @@ struct NotchStocksWidgetView: View {
                     }
 
                     MarketHeroChart(asset: selectedAsset, range: selectedRange)
-                        .frame(height: 72)
+                        .frame(height: 68)
 
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
@@ -754,14 +693,18 @@ struct NotchStocksWidgetView: View {
                         }
                         .padding(.horizontal, 1)
                     }
-                    .frame(height: 50)
+                    .frame(height: 46)
                 }
                 .padding(.horizontal, 10)
-                .padding(.top, 2)
-                .padding(.bottom, 4)
+                .padding(.top, 1)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         )
+        .onAppear { marketStore.start() }
+    }
+
+    private var snapshot: StockMarketSnapshot {
+        marketStore.snapshot
     }
 
     private var selectedAsset: MarketAsset {

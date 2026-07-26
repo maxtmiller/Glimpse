@@ -14,14 +14,15 @@ struct NotchView: View {
     let onLocationRequest: () -> Void
 
     @State private var displayState: DisplayState = .hidden
-    @State private var selectedPage: NotchPage = .stocks
+    @State private var selectedPage: NotchPage = .weather
     @State private var temperatureUnit: TemperatureUnit = .fahrenheit
     @State private var selectedGraphMetric: GraphMetric?
-    @State private var suppressHoverUntil: Date?
     @State private var renderedState: DisplayState = .hidden
     @State private var presentationProgress: CGFloat = 0
     @State private var pendingHiddenResetToken = UUID()
+    @State private var pendingExpandToken = UUID()
     @State private var pendingCollapseToken = UUID()
+    @State private var suppressHoverUntil: Date?
     @State private var isHoveringExpandedShell = false
 
     var body: some View {
@@ -37,6 +38,10 @@ struct NotchView: View {
                 .scaleEffect(0.90 + (0.10 * presentationProgress), anchor: .top)
                 .offset(y: (1 - presentationProgress) * 4)
                 .allowsHitTesting(displayState != .hidden)
+
+            if displayState != .hidden {
+                hoverTrackingLayer
+            }
         }
         .frame(
             width: layout.expandedWidth,
@@ -44,6 +49,13 @@ struct NotchView: View {
             alignment: .top
         )
         .ignoresSafeArea()
+        .onReceive(NotificationCenter.default.publisher(for: .notchMouseExited)) { _ in
+            // The panel stops receiving AppKit mouse events as soon as the
+            // cursor leaves, so this signal must also bypass the expansion
+            // animation's hover suppression window.
+            suppressHoverUntil = nil
+            handleHoverChange(false)
+        }
     }
 
     private var isExpanded: Bool {
@@ -64,8 +76,6 @@ struct NotchView: View {
             selectedWidgetView
                 .frame(width: shellWidth, height: shellHeight, alignment: .top)
 
-            hoverTrackingLayer
-                .frame(width: shellWidth, height: shellHeight, alignment: .top)
         }
         .frame(width: shellWidth, height: shellHeight, alignment: .top)
     }
@@ -145,13 +155,26 @@ struct NotchView: View {
     }
 
     private var hoverTrackingLayer: some View {
-        HoverTrackingView(
-            trackingFrame: isExpanded
-                ? NSRect(x: 0, y: 0, width: layout.expandedWidth, height: layout.topBarHeight + layout.expandedBodyHeight)
-                : NSRect(x: 0, y: 0, width: layout.collapsedWidth, height: collapsedShellHeight),
+        let trackingWidth = isExpanded ? layout.expandedWidth : layout.collapsedWidth
+        let trackingHeight = isExpanded
+            ? layout.topBarHeight + layout.expandedBodyHeight
+            : collapsedShellHeight
+
+        return HoverTrackingView(
+            trackingFrame: NSRect(
+                x: 0,
+                y: 0,
+                width: trackingWidth,
+                height: trackingHeight
+            ),
             onHoverChanged: { hovering in
                 handleHoverChange(hovering)
             }
+        )
+        .frame(
+            width: trackingWidth,
+            height: trackingHeight,
+            alignment: .top
         )
         .allowsHitTesting(false)
     }
@@ -166,9 +189,18 @@ struct NotchView: View {
         if hovering {
             isHoveringExpandedShell = true
             pendingCollapseToken = UUID()
-            setDisplayState(.expanded)
+            let expandToken = UUID()
+            pendingExpandToken = expandToken
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [expandToken] in
+                guard pendingExpandToken == expandToken else { return }
+                guard isHoveringExpandedShell else { return }
+                guard displayState == .collapsed else { return }
+                setDisplayState(.expanded)
+            }
         } else {
             isHoveringExpandedShell = false
+            pendingExpandToken = UUID()
             let collapseToken = UUID()
             pendingCollapseToken = collapseToken
 
@@ -184,7 +216,6 @@ struct NotchView: View {
     private func toggleCollapsedVisibility() {
         switch displayState {
         case .hidden:
-            suppressHoverUntil = Date().addingTimeInterval(0.18)
             setDisplayState(.collapsed)
         case .collapsed, .expanded:
             setDisplayState(.hidden)
@@ -196,6 +227,9 @@ struct NotchView: View {
         pendingHiddenResetToken = UUID()
         if state != .collapsed {
             pendingCollapseToken = UUID()
+        }
+        if state == .expanded {
+            suppressHoverUntil = Date().addingTimeInterval(NotchMotion.hoverAnimationDuration + 0.08)
         }
         if state == .hidden {
             suppressHoverUntil = nil
@@ -410,12 +444,22 @@ private struct HoverTrackingView: NSViewRepresentable {
         if nsView.frame != trackingFrame {
             nsView.frame = trackingFrame
         }
+        DispatchQueue.main.async {
+            nsView.syncHoverState()
+        }
     }
 }
 
 private final class HoverTrackingNSView: NSView {
     var onHoverChanged: ((Bool) -> Void)?
     private var isHovering = false
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        DispatchQueue.main.async { [weak self] in
+            self?.syncHoverState()
+        }
+    }
 
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
@@ -427,6 +471,7 @@ private final class HoverTrackingNSView: NSView {
             .inVisibleRect
         ]
         addTrackingArea(NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil))
+        syncHoverState()
     }
 
     override func mouseEntered(with event: NSEvent) {
@@ -439,5 +484,18 @@ private final class HoverTrackingNSView: NSView {
         guard isHovering else { return }
         isHovering = false
         onHoverChanged?(false)
+    }
+
+    func syncHoverState() {
+        guard let window else { return }
+
+        let windowPoint = window.convertPoint(fromScreen: NSEvent.mouseLocation)
+        let localPoint = convert(windowPoint, from: nil)
+        let hovering = bounds.contains(localPoint)
+
+        guard hovering != isHovering else { return }
+
+        isHovering = hovering
+        onHoverChanged?(hovering)
     }
 }

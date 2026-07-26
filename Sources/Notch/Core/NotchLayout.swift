@@ -3,7 +3,7 @@ import SwiftUI
 
 enum NotchGeometry {
     static let width: CGFloat = 205
-    static let height: CGFloat = 36
+    static let height: CGFloat = 34
     static let lowerCornerRadius: CGFloat = 8
     static let topCornerRadius: CGFloat = 0
 }

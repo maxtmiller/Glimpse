@@ -6,7 +6,7 @@ Basic macOS notch-style weather and market panel built with SwiftUI and AppKit.
 
 - Shows a floating panel centered near the top of your main display
 - Opens to a market dashboard by default, with weather still available as a page
-- Uses static sample market data so you can preview the layout immediately
+- Loads market quotes and intraday chart data from Yahoo Finance without an API key; keeps sample data as a fallback
 - Expands on hover to show extra market or weather details
 - Pulls live location and weather data from a public weather API after you approve location access
 
@@ -47,5 +47,5 @@ If the app has not been granted location access yet, click the cloud icon to req
 ## Notes
 
 - The live weather data comes from Open-Meteo, so no WeatherKit entitlement is required.
-- For live market data, Financial Modeling Prep is the best fit here because it covers quotes, historical charts, commodities, crypto, indices, and top movers in one API.
+- Market data is fetched from Yahoo Finance every 60 seconds. Yahoo data can be delayed depending on the exchange, and its public endpoints are intended for personal use.
 - The bundle script packages the executable and usage strings so the location prompt works from a real `.app`.

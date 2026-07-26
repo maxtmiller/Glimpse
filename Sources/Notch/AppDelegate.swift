@@ -4,11 +4,19 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: NotchPanel?
     private var layout = PanelLayout.from(screen: NSScreen.main)
+    private var anchoredFrame: NSRect?
     private var currentState: NotchPresentationState = .hidden
     private var mouseTrackingTimer: Timer?
+    private var wasInsideInteractiveRect: Bool?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        layout = PanelLayout.from(screen: NSScreen.main ?? NSScreen.screens.first)
+        NSApp.setActivationPolicy(.accessory)
+
+        let anchorScreen = NSScreen.screens.first(where: { $0.safeAreaInsets.top > 0 })
+            ?? NSScreen.main
+            ?? NSScreen.screens.first
+        layout = PanelLayout.from(screen: anchorScreen)
+        anchoredFrame = notchFrame(for: anchorScreen, size: fixedPanelSize)
 
         let rootView = AnyView(NotchRootView(layout: layout))
         let panel = NotchPanel(contentRect: .zero)
@@ -21,13 +29,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             name: .notchPresentationStateDidChange,
             object: nil
         )
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self,
-            selector: #selector(handleActiveSpaceChange(_:)),
-            name: NSWorkspace.activeSpaceDidChangeNotification,
-            object: nil
-        )
-
         position(panel: panel)
         updateMouseInteraction()
 
@@ -37,7 +38,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         RunLoop.main.add(mouseTrackingTimer!, forMode: .common)
 
         presentPanel()
-        NSApp.activate(ignoringOtherApps: true)
     }
 
     func applicationDidResignActive(_ notification: Notification) {
@@ -54,8 +54,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func position(panel: NotchPanel) {
-        let screen = panel.screen ?? NSScreen.main ?? NSScreen.screens.first
-        let frame = notchFrame(for: screen, size: fixedPanelSize)
+        let frame = anchoredFrame ?? notchFrame(for: NSScreen.main ?? NSScreen.screens.first, size: fixedPanelSize)
         panel.setFrame(frame, display: false)
     }
 
@@ -83,16 +82,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         presentPanel()
     }
 
-    @objc private func handleActiveSpaceChange(_ notification: Notification) {
-        presentPanel()
-    }
-
     private func presentPanel() {
         guard let panel else { return }
 
         position(panel: panel)
         panel.orderFrontRegardless()
-        panel.makeKey()
+        panel.enableSkyLight()
         updateMouseInteraction()
     }
 
@@ -100,7 +95,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let panel else { return }
 
         let mouseLocation = NSEvent.mouseLocation
-        let shouldIgnore = !interactiveRect(for: currentState, in: panel).contains(mouseLocation)
+        let isInsideInteractiveRect = interactiveRect(for: currentState, in: panel).contains(mouseLocation)
+        let shouldIgnore = !isInsideInteractiveRect
+
+        if wasInsideInteractiveRect != isInsideInteractiveRect {
+            wasInsideInteractiveRect = isInsideInteractiveRect
+            if !isInsideInteractiveRect && currentState == .expanded {
+                NotificationCenter.default.post(name: .notchMouseExited, object: nil)
+            }
+        }
+
         if panel.ignoresMouseEvents != shouldIgnore {
             panel.ignoresMouseEvents = shouldIgnore
         }
@@ -143,4 +147,5 @@ private enum NotchPresentationState: String {
 
 extension Notification.Name {
     static let notchPresentationStateDidChange = Notification.Name("NotchPresentationStateDidChange")
+    static let notchMouseExited = Notification.Name("NotchMouseExited")
 }

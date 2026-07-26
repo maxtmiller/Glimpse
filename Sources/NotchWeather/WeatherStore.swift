@@ -11,6 +11,7 @@ final class WeatherStore: NSObject, ObservableObject, @preconcurrency CLLocation
     private var weatherTask: Task<Void, Never>?
     private var refreshTask: Task<Void, Never>?
     private var hasRequestedAuthorization = false
+    private var hasStarted = false
     private var lastContext: WeatherContext?
 
     private struct WeatherContext {
@@ -24,13 +25,18 @@ final class WeatherStore: NSObject, ObservableObject, @preconcurrency CLLocation
         super.init()
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
-        bootstrap()
-        startRefreshLoop()
     }
 
     deinit {
         weatherTask?.cancel()
         refreshTask?.cancel()
+    }
+
+    func start() {
+        guard !hasStarted else { return }
+        hasStarted = true
+        bootstrap()
+        startRefreshLoop()
     }
 
     private func bootstrap() {
@@ -213,5 +219,8 @@ struct WeatherRootView: View {
                 store.requestLocationAccess()
             }
         )
+        .onAppear {
+            store.start()
+        }
     }
 }

@@ -25,7 +25,7 @@ struct PanelLayout {
                 collapsedWidth: 480,
                 expandedWidth: 580,
                 collapsedBodyHeight: 0,
-                expandedBodyHeight: 164
+                expandedBodyHeight: 180
             )
         }
 
@@ -39,7 +39,7 @@ struct PanelLayout {
             collapsedWidth: collapsedWidth,
             expandedWidth: expandedWidth,
             collapsedBodyHeight: 0,
-            expandedBodyHeight: 164
+            expandedBodyHeight: 180
         )
     }
 }

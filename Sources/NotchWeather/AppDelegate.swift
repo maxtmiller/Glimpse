@@ -4,18 +4,39 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: NotchPanel?
     private var layout = PanelLayout.from(screen: NSScreen.main)
+    private var currentState: NotchPresentationState = .hidden
+    private var mouseTrackingTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         layout = PanelLayout.from(screen: NSScreen.main ?? NSScreen.screens.first)
 
-        let rootView = WeatherRootView(layout: layout)
-
+        let rootView = AnyView(WeatherRootView(layout: layout))
         let panel = NotchPanel(contentRect: .zero)
         panel.contentView = NSHostingView(rootView: rootView)
         self.panel = panel
 
-        position(panel: panel, size: fixedPanelSize)
-        panel.orderFrontRegardless()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handlePresentationStateChange(_:)),
+            name: .notchPresentationStateDidChange,
+            object: nil
+        )
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(handleActiveSpaceChange(_:)),
+            name: NSWorkspace.activeSpaceDidChangeNotification,
+            object: nil
+        )
+
+        position(panel: panel)
+        updateMouseInteraction()
+
+        mouseTrackingTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
+            self?.updateMouseInteraction()
+        }
+        RunLoop.main.add(mouseTrackingTimer!, forMode: .common)
+
+        presentPanel()
         NSApp.activate(ignoringOtherApps: true)
     }
 
@@ -23,9 +44,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSSize(width: layout.expandedWidth, height: layout.topBarHeight + layout.expandedBodyHeight)
     }
 
-    private func position(panel: NotchPanel, size: NSSize) {
+    private func position(panel: NotchPanel) {
         let screen = panel.screen ?? NSScreen.main ?? NSScreen.screens.first
-        let frame = notchFrame(for: screen, size: size)
+        let frame = notchFrame(for: screen, size: fixedPanelSize)
         panel.setFrame(frame, display: false)
     }
 
@@ -41,4 +62,76 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         return NSRect(x: x, y: y, width: size.width, height: size.height)
     }
+
+    @objc private func handlePresentationStateChange(_ notification: Notification) {
+        guard let rawState = notification.userInfo?["state"] as? String,
+              let state = NotchPresentationState(rawValue: rawState)
+        else {
+            return
+        }
+
+        currentState = state
+        presentPanel()
+    }
+
+    @objc private func handleActiveSpaceChange(_ notification: Notification) {
+        presentPanel()
+    }
+
+    private func presentPanel() {
+        guard let panel else { return }
+
+        position(panel: panel)
+        panel.orderFrontRegardless()
+        panel.makeKey()
+        updateMouseInteraction()
+    }
+
+    private func updateMouseInteraction() {
+        guard let panel else { return }
+
+        let mouseLocation = NSEvent.mouseLocation
+        let shouldIgnore = !interactiveRect(for: currentState, in: panel).contains(mouseLocation)
+        if panel.ignoresMouseEvents != shouldIgnore {
+            panel.ignoresMouseEvents = shouldIgnore
+        }
+
+        if !shouldIgnore && currentState == .hidden {
+            panel.orderFrontRegardless()
+        }
+    }
+
+    private func interactiveRect(for state: NotchPresentationState, in panel: NSWindow) -> NSRect {
+        let frame = panel.frame
+        switch state {
+        case .hidden:
+            let handleHeight = max(layout.topBarHeight - 16, 28)
+            return NSRect(
+                x: frame.midX - NotchGeometry.width / 2,
+                y: frame.maxY - layout.topBarHeight + (layout.topBarHeight - handleHeight) / 2,
+                width: NotchGeometry.width,
+                height: handleHeight
+            )
+        case .collapsed:
+            let shellHeight = max(layout.topBarHeight - 4, 56)
+            return NSRect(
+                x: frame.midX - layout.collapsedWidth / 2,
+                y: frame.maxY - shellHeight,
+                width: layout.collapsedWidth,
+                height: shellHeight
+            )
+        case .expanded:
+            return frame
+        }
+    }
+}
+
+private enum NotchPresentationState: String {
+    case hidden
+    case collapsed
+    case expanded
+}
+
+extension Notification.Name {
+    static let notchPresentationStateDidChange = Notification.Name("NotchPresentationStateDidChange")
 }

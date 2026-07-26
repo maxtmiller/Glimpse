@@ -2,6 +2,12 @@ import AppKit
 import SwiftUI
 
 struct NotchWeatherView: View {
+    private enum DisplayState {
+        case hidden
+        case collapsed
+        case expanded
+    }
+
     private struct InteractiveButtonStyle: ButtonStyle {
         func makeBody(configuration: Configuration) -> some View {
             configuration.label
@@ -55,32 +61,122 @@ struct NotchWeatherView: View {
         }
     }
 
+    private enum DashboardPage: String, CaseIterable, Identifiable {
+        case home
+        case weather
+        case stocks
+        case tokenSpend
+        case settings
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .home: return "Home"
+            case .weather: return "Weather"
+            case .stocks: return "Stocks"
+            case .tokenSpend: return "Token Spend"
+            case .settings: return "Settings"
+            }
+        }
+
+        var subtitle: String {
+            switch self {
+            case .home: return "Choose a widget"
+            case .weather: return "Current conditions"
+            case .stocks: return "Watchlist scaffold"
+            case .tokenSpend: return "Usage scaffold"
+            case .settings: return "Panel preferences"
+            }
+        }
+
+        var symbol: String {
+            switch self {
+            case .home: return "square.grid.2x2"
+            case .weather: return "cloud.sun.fill"
+            case .stocks: return "chart.line.uptrend.xyaxis"
+            case .tokenSpend: return "chart.pie.fill"
+            case .settings: return "gearshape.fill"
+            }
+        }
+
+        var accent: Color {
+            switch self {
+            case .home: return Color.cyan
+            case .weather: return Color.orange
+            case .stocks: return Color.green
+            case .tokenSpend: return Color.blue
+            case .settings: return Color.white.opacity(0.9)
+            }
+        }
+    }
+
     let snapshot: WeatherSnapshot
     let layout: PanelLayout
     let onHoverChanged: (Bool) -> Void
     let onLocationRequest: () -> Void
 
-    @State private var isExpanded = false
+    @State private var displayState: DisplayState = .hidden
     @State private var temperatureUnit: TemperatureUnit = .fahrenheit
     @State private var selectedGraphMetric: GraphMetric?
     @State private var isLocationButtonHovered = false
     @State private var isUnitButtonHovered = false
     @State private var hoveredMetric: GraphMetric?
     @State private var isRetryButtonHovered = false
+    @State private var isHomeButtonHovered = false
+    @State private var isSettingsButtonHovered = false
+    @State private var suppressHoverUntil: Date?
+    @State private var renderedState: DisplayState = .hidden
+    @State private var presentationProgress: CGFloat = 0
+    @State private var pendingHiddenResetToken = UUID()
+    @State private var selectedDashboardPage: DashboardPage = .weather
 
     var body: some View {
+        ZStack(alignment: .top) {
+            hiddenToggleLayer
+                .opacity(max(0, 1 - presentationProgress))
+                .scaleEffect(1 - (0.03 * presentationProgress), anchor: .center)
+                .offset(y: (1 - presentationProgress) * 2)
+                .allowsHitTesting(displayState == .hidden)
+
+            visibleShell
+                .opacity(presentationProgress)
+                .scaleEffect(0.90 + (0.10 * presentationProgress), anchor: .top)
+                .offset(y: (1 - presentationProgress) * 4)
+                .allowsHitTesting(displayState != .hidden)
+        }
+        .frame(
+            width: layout.expandedWidth,
+            height: layout.topBarHeight + layout.expandedBodyHeight,
+            alignment: .top
+        )
+        .ignoresSafeArea()
+    }
+
+    private var isExpanded: Bool {
+        renderedState == .expanded
+    }
+
+    private var visibleShell: some View {
         let shellWidth = isExpanded ? layout.expandedWidth : layout.collapsedWidth
         let shellHeight = isExpanded ? layout.topBarHeight + layout.expandedBodyHeight : collapsedShellHeight
-        let interactionHeight = layout.topBarHeight + layout.expandedBodyHeight
+        let topReveal = revealProgress(
+            presentationProgress,
+            start: isExpanded ? 0.06 : 0.14,
+            end: isExpanded ? 0.42 : 0.72
+        )
 
-        ZStack {
-            hoverTrackingLayer
-
+        return ZStack(alignment: .top) {
             islandBackground
+                .frame(width: shellWidth, height: shellHeight, alignment: .top)
+
+            notchToggleButton
                 .frame(width: shellWidth, height: shellHeight, alignment: .top)
 
             VStack(spacing: 0) {
                 topRow
+                    .opacity(topReveal)
+                    .offset(y: (1 - topReveal) * -2)
 
                 bodyContent
                     .frame(height: isExpanded ? layout.expandedBodyHeight : 0, alignment: .top)
@@ -88,9 +184,26 @@ struct NotchWeatherView: View {
                     .clipped()
             }
             .frame(width: shellWidth, height: shellHeight, alignment: .top)
+
+            hoverTrackingLayer
+                .frame(width: shellWidth, height: shellHeight, alignment: .top)
         }
-        .frame(width: layout.expandedWidth, height: interactionHeight, alignment: .top)
-        .ignoresSafeArea()
+        .frame(width: shellWidth, height: shellHeight, alignment: .top)
+    }
+
+    private var hiddenToggleLayer: some View {
+        notchToggleButton
+            .allowsHitTesting(displayState == .hidden)
+    }
+
+    private var notchToggleButton: some View {
+        Button(action: toggleCollapsedVisibility) {
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .fill(.black.opacity(0.16))
+                .frame(width: NotchGeometry.width, height: max(layout.topBarHeight - 16, 28), alignment: .center)
+                .shadow(color: .black.opacity(0.22), radius: 3, y: 1)
+        }
+        .buttonStyle(.plain)
     }
 
     private var hoverTrackingLayer: some View {
@@ -99,27 +212,109 @@ struct NotchWeatherView: View {
                 ? NSRect(x: 0, y: 0, width: layout.expandedWidth, height: layout.topBarHeight + layout.expandedBodyHeight)
                 : NSRect(x: 0, y: 0, width: layout.collapsedWidth, height: collapsedShellHeight),
             onHoverChanged: { hovering in
-                if hovering {
-                    setExpanded(true)
-                } else {
-                    setExpanded(false)
-                }
+                handleHoverChange(hovering)
             }
-        )
-        .frame(
-            width: isExpanded ? layout.expandedWidth : layout.collapsedWidth,
-            height: isExpanded ? layout.topBarHeight + layout.expandedBodyHeight : collapsedShellHeight,
-            alignment: .top
         )
         .allowsHitTesting(false)
     }
 
-    private func setExpanded(_ expanded: Bool) {
-        guard isExpanded != expanded else { return }
-        withAnimation(.easeInOut(duration: NotchMotion.hoverAnimationDuration)) {
-            isExpanded = expanded
+    private func handleHoverChange(_ hovering: Bool) {
+        guard displayState != .hidden else { return }
+
+        if let suppressHoverUntil, suppressHoverUntil > Date() {
+            return
         }
-        onHoverChanged(expanded)
+
+        if hovering {
+            setDisplayState(.expanded)
+        } else {
+            setDisplayState(.collapsed)
+        }
+    }
+
+    private func toggleCollapsedVisibility() {
+        switch displayState {
+        case .hidden:
+            suppressHoverUntil = Date().addingTimeInterval(0.18)
+            setDisplayState(.collapsed)
+        case .collapsed, .expanded:
+            setDisplayState(.hidden)
+        }
+    }
+
+    private func selectDashboardPage(_ page: DashboardPage) {
+        guard selectedDashboardPage != page else { return }
+        withAnimation(.easeInOut(duration: NotchMotion.hoverAnimationDuration)) {
+            selectedDashboardPage = page
+        }
+    }
+
+    private func setDisplayState(_ state: DisplayState) {
+        guard displayState != state else { return }
+        pendingHiddenResetToken = UUID()
+        if state == .hidden {
+            suppressHoverUntil = nil
+        }
+
+        if state == .hidden {
+            let resetToken = pendingHiddenResetToken
+            withAnimation(.easeInOut(duration: NotchMotion.hoverAnimationDuration)) {
+                presentationProgress = 0
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + NotchMotion.hoverAnimationDuration) {
+                guard pendingHiddenResetToken == resetToken else { return }
+                renderedState = .hidden
+            }
+        } else {
+            withAnimation(.easeInOut(duration: NotchMotion.hoverAnimationDuration)) {
+                renderedState = state
+                presentationProgress = 1
+            }
+        }
+
+        withAnimation(.easeInOut(duration: NotchMotion.hoverAnimationDuration)) {
+            displayState = state
+        }
+        NotificationCenter.default.post(
+            name: .notchPresentationStateDidChange,
+            object: nil,
+            userInfo: ["state": presentationStateName(for: state)]
+        )
+        onHoverChanged(state == .expanded)
+    }
+
+    private func presentationStateName(for state: DisplayState) -> String {
+        switch state {
+        case .hidden:
+            return "hidden"
+        case .collapsed:
+            return "collapsed"
+        case .expanded:
+            return "expanded"
+        }
+    }
+
+    private func dashboardNavigationButton(
+        systemName: String,
+        title: String,
+        isHovered: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            ZStack {
+                Circle()
+                    .fill(isHovered ? Color.white.opacity(0.18) : Color.white.opacity(0.08))
+                    .shadow(color: isHovered ? Color.black.opacity(0.26) : .black.opacity(0.14), radius: isHovered ? 4 : 2, y: 1)
+
+                Image(systemName: systemName)
+                    .font(.system(size: 10.5, weight: .semibold))
+                    .foregroundStyle(isHovered ? Color.white : .white.opacity(0.88))
+            }
+            .frame(width: 24, height: 24)
+        }
+        .buttonStyle(InteractiveButtonStyle())
+        .help(title)
     }
 
     private var islandBackground: some View {
@@ -151,18 +346,19 @@ struct NotchWeatherView: View {
         let horizontalInset: CGFloat = isExpanded ? 10 : 10
         let leadingAlignment: Alignment = isExpanded ? .leading : .trailing
         let trailingAlignment: Alignment = isExpanded ? .trailing : .leading
+        let lateralOffset = isExpanded ? 0 : 14 * revealProgress(presentationProgress, start: 0.12, end: 0.68)
 
         return HStack(spacing: 0) {
             leadingSummary
                 .frame(width: sideWidth, alignment: leadingAlignment)
-                .offset(x: isExpanded ? 0 : -14)
+                .offset(x: -lateralOffset)
 
             Color.clear
                 .frame(width: NotchGeometry.width)
 
             trailingSummary
                 .frame(width: sideWidth, alignment: trailingAlignment)
-                .offset(x: isExpanded ? 0 : 14)
+                .offset(x: lateralOffset)
         }
         .padding(.horizontal, horizontalInset)
         .padding(.vertical, 4)
@@ -170,6 +366,41 @@ struct NotchWeatherView: View {
     }
 
     private var bodyContent: some View {
+        Group {
+            switch selectedDashboardPage {
+            case .home:
+                homeDashboardView
+            case .weather:
+                weatherDashboardView
+            case .stocks:
+                placeholderDashboardView(
+                    title: "Stocks",
+                    subtitle: "A watchlist widget could live here.",
+                    details: [
+                        "Price change by symbol",
+                        "Mini portfolio allocation strip",
+                        "News movers and alerts"
+                    ]
+                )
+            case .tokenSpend:
+                placeholderDashboardView(
+                    title: "Token spend",
+                    subtitle: "A usage dashboard could live here.",
+                    details: [
+                        "Daily Anthropic spend",
+                        "Model mix by project",
+                        "Budget thresholds and alerts"
+                    ]
+                )
+            case .settings:
+                settingsDashboardView
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(.top, isExpanded ? 4 : 0)
+    }
+
+    private var weatherDashboardView: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 10) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -209,60 +440,350 @@ struct NotchWeatherView: View {
             forecastGraph
         }
         .padding(.horizontal, 10)
-        .padding(.bottom, 6)
+        .padding(.bottom, 18)
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
-    private var leadingSummary: some View {
-        let isHovered = isLocationButtonHovered
+    private var homeDashboardView: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            dashboardHeader(
+                title: "Home",
+                subtitle: "Pick a widget to show in this panel."
+            )
 
-        return HStack(alignment: .center, spacing: 10) {
-            Button(action: onLocationRequest) {
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: snapshot.hasLiveData
-                                    ? [Color.orange, Color.yellow.opacity(0.88)]
-                                    : [Color.blue.opacity(0.72), Color.cyan.opacity(0.55)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 28, height: 28)
-                        .overlay(
-                            Circle()
-                                .stroke(isHovered ? Color.white.opacity(0.42) : Color.white.opacity(0.30), lineWidth: 1)
-                        )
-                        .shadow(color: isHovered ? Color.cyan.opacity(0.24) : .black.opacity(0.28), radius: isHovered ? 5 : 3, y: 1)
-                        .scaleEffect(isHovered ? 1.04 : 1)
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible(), spacing: 6),
+                    GridItem(.flexible(), spacing: 6)
+                ],
+                spacing: 6
+            ) {
+                ForEach(DashboardPage.allCases.filter { $0 != .home && $0 != .settings }) { page in
+                    dashboardTile(for: page)
+                }
+                dashboardTile(for: .settings)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.bottom, 12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
 
-                    Image(systemName: snapshot.hasLiveData ? snapshot.symbol : "cloud.fill")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
+    private var settingsDashboardView: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            dashboardHeader(
+                title: "Settings",
+                subtitle: "Scaffold for panel controls and preferences."
+            )
+
+            VStack(spacing: 8) {
+                settingsRow(title: "Launch at login", value: "Soon")
+                settingsRow(title: "Compact mode", value: "Soon")
+                settingsRow(title: "Default widget", value: selectedDashboardPage == .home ? "Home" : selectedDashboardPage.title)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.bottom, 12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private func placeholderDashboardView(title: String, subtitle: String, details: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            dashboardHeader(title: title, subtitle: subtitle)
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(details, id: \.self) { detail in
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(Color.white.opacity(0.22))
+                            .frame(width: 6, height: 6)
+                        Text(detail)
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.74))
+                    }
                 }
             }
-            .buttonStyle(InteractiveButtonStyle())
-            .onHover { isLocationButtonHovered = $0 }
-            .help(snapshot.hasLiveData ? "Refresh location" : "Enable location services")
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 10)
+        .padding(.bottom, 12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private func dashboardHeader(title: String, subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white)
+
+            Text(subtitle)
+                .font(.system(size: 10.5, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.58))
+                .lineLimit(1)
+                .truncationMode(.tail)
+        }
+    }
+
+    private func dashboardTile(for page: DashboardPage) -> some View {
+        let isSelected = selectedDashboardPage == page
+
+        return Button {
+            selectDashboardPage(page)
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .center, spacing: 8) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(page.accent.opacity(isSelected ? 0.34 : 0.20))
+                        Image(systemName: page.symbol)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(page.accent)
+                    }
+                    .frame(width: 24, height: 24)
+
+                    Spacer(minLength: 0)
+                }
+
+                Text(page.title)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+
+                Text(page.subtitle)
+                    .font(.system(size: 9.5, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.58))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+            }
+            .padding(9)
+            .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(isSelected ? Color.white.opacity(0.18) : Color.white.opacity(0.09))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(isSelected ? page.accent.opacity(0.55) : Color.white.opacity(0.12), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(isSelected ? 0.28 : 0.20), radius: 3, y: 1)
+        }
+        .buttonStyle(InteractiveButtonStyle())
+    }
+
+    private func settingsRow(title: String, value: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.72))
+
+            Spacer(minLength: 0)
+
+            Text(value)
+                .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.5))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color.white.opacity(0.08))
+        )
+    }
+
+    private func dashboardSummaryBadge(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 9.5, weight: .semibold, design: .rounded))
+            .foregroundStyle(.white.opacity(0.88))
+            .padding(.horizontal, 7)
+            .padding(.vertical, 4)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Color.white.opacity(0.10))
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
+            )
+    }
+
+    @ViewBuilder
+    private func dashboardSummaryHeader(
+        icon: String,
+        title: String,
+        subtitle: String,
+        accent: Color
+    ) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [accent.opacity(0.78), accent.opacity(0.48)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 28, height: 28)
+                    .shadow(color: .black.opacity(0.22), radius: 3, y: 1)
+
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(snapshot.displayLocationLabel)
+                Text(title)
                     .font(.system(size: 14.5, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .lineLimit(1)
-                    .truncationMode(.tail)
+
+                Text(subtitle)
+                    .font(.system(size: 10.5, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.62))
+                    .lineLimit(1)
             }
         }
         .padding(.leading, 4)
     }
 
-    private var trailingSummary: some View {
-        HStack(spacing: 10) {
-            temperatureChip
-            unitToggleButton
+    @ViewBuilder
+    private var leadingSummary: some View {
+        switch selectedDashboardPage {
+        case .weather:
+            let isHovered = isLocationButtonHovered
+
+            HStack(alignment: .center, spacing: 10) {
+                Button(action: onLocationRequest) {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: snapshot.hasLiveData
+                                        ? [Color.orange, Color.yellow.opacity(0.88)]
+                                        : [Color.blue.opacity(0.72), Color.cyan.opacity(0.55)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 28, height: 28)
+                            .overlay(
+                                Circle()
+                                    .stroke(isHovered ? Color.white.opacity(0.42) : Color.white.opacity(0.30), lineWidth: 1)
+                            )
+                            .shadow(color: isHovered ? Color.cyan.opacity(0.24) : .black.opacity(0.28), radius: isHovered ? 5 : 3, y: 1)
+                            .scaleEffect(isHovered ? 1.04 : 1)
+
+                        Image(systemName: snapshot.hasLiveData ? snapshot.symbol : "cloud.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.white)
+                    }
+                }
+                .buttonStyle(InteractiveButtonStyle())
+                .onHover { isLocationButtonHovered = $0 }
+                .help(snapshot.hasLiveData ? "Refresh location" : "Enable location services")
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(snapshot.displayLocationLabel)
+                        .font(.system(size: 14.5, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+
+                if isExpanded {
+                    Spacer(minLength: 0)
+
+                    dashboardNavigationButton(
+                        systemName: "house.fill",
+                        title: "Home",
+                        isHovered: isHomeButtonHovered
+                    ) {
+                        selectDashboardPage(.home)
+                    }
+                    .onHover { isHomeButtonHovered = $0 }
+                    .offset(x: -6)
+                }
+            }
+            .padding(.leading, 4)
+        case .home:
+            dashboardSummaryHeader(
+                icon: "square.grid.2x2.fill",
+                title: "Home",
+                subtitle: "Widgets",
+                accent: Color.cyan
+            )
+        case .stocks:
+            dashboardSummaryHeader(
+                icon: "chart.line.uptrend.xyaxis",
+                title: "Stocks",
+                subtitle: "Watchlist",
+                accent: Color.green
+            )
+        case .tokenSpend:
+            dashboardSummaryHeader(
+                icon: "chart.pie.fill",
+                title: "Spend",
+                subtitle: "Budget",
+                accent: Color.blue
+            )
+        case .settings:
+            dashboardSummaryHeader(
+                icon: "gearshape.fill",
+                title: "Settings",
+                subtitle: "Prefs",
+                accent: Color.white.opacity(0.9)
+            )
         }
-        .padding(.trailing, 4)
+    }
+
+    @ViewBuilder
+    private var trailingSummary: some View {
+        switch selectedDashboardPage {
+        case .weather:
+            HStack(spacing: 10) {
+                if isExpanded {
+                    dashboardNavigationButton(
+                        systemName: "gearshape.fill",
+                        title: "Settings",
+                        isHovered: isSettingsButtonHovered
+                    ) {
+                        selectDashboardPage(.settings)
+                    }
+                    .onHover { isSettingsButtonHovered = $0 }
+                    .offset(x: 6)
+
+                    Spacer(minLength: 0)
+                }
+
+                temperatureChip
+                unitToggleButton
+            }
+            .padding(.trailing, 4)
+        case .home:
+            HStack(spacing: 5) {
+                dashboardSummaryBadge("Widgets")
+            }
+            .padding(.trailing, 4)
+        case .stocks:
+            HStack(spacing: 5) {
+                dashboardSummaryBadge("AAPL")
+                dashboardSummaryBadge("MSFT")
+            }
+            .padding(.trailing, 4)
+        case .tokenSpend:
+            HStack(spacing: 5) {
+                dashboardSummaryBadge("Anthropic")
+                dashboardSummaryBadge("Today")
+            }
+            .padding(.trailing, 4)
+        case .settings:
+            HStack(spacing: 5) {
+                dashboardSummaryBadge("Panel")
+                dashboardSummaryBadge("Theme")
+            }
+            .padding(.trailing, 4)
+        }
     }
 
     private var temperatureChip: some View {
@@ -606,6 +1127,12 @@ struct NotchWeatherView: View {
 
     private var collapsedShellHeight: CGFloat {
         max(layout.topBarHeight - 4, 56)
+    }
+
+    private func revealProgress(_ progress: CGFloat, start: CGFloat, end: CGFloat) -> CGFloat {
+        guard end > start else { return progress >= end ? 1 : 0 }
+        let clamped = max(0, min(1, (progress - start) / (end - start)))
+        return clamped * clamped * (3 - 2 * clamped)
     }
 
     private var nativeBevel: some View {

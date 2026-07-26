@@ -1,12 +1,13 @@
 # Notch
 
-Basic macOS notch-style weather panel built with SwiftUI and AppKit.
+Basic macOS notch-style weather and market panel built with SwiftUI and AppKit.
 
 ## What it does
 
 - Shows a floating panel centered near the top of your main display
-- Uses a static sample weather card so you can preview the layout immediately
-- Expands on hover to show extra weather details
+- Opens to a market dashboard by default, with weather still available as a page
+- Uses static sample market data so you can preview the layout immediately
+- Expands on hover to show extra market or weather details
 - Pulls live location and weather data from a public weather API after you approve location access
 
 ## Run it
@@ -46,4 +47,5 @@ If the app has not been granted location access yet, click the cloud icon to req
 ## Notes
 
 - The live weather data comes from Open-Meteo, so no WeatherKit entitlement is required.
+- For live market data, Financial Modeling Prep is the best fit here because it covers quotes, historical charts, commodities, crypto, indices, and top movers in one API.
 - The bundle script packages the executable and usage strings so the location prompt works from a real `.app`.

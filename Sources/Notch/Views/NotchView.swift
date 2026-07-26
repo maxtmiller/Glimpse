@@ -14,13 +14,15 @@ struct NotchView: View {
     let onLocationRequest: () -> Void
 
     @State private var displayState: DisplayState = .hidden
-    @State private var selectedPage: NotchPage = .weather
+    @State private var selectedPage: NotchPage = .stocks
     @State private var temperatureUnit: TemperatureUnit = .fahrenheit
     @State private var selectedGraphMetric: GraphMetric?
     @State private var suppressHoverUntil: Date?
     @State private var renderedState: DisplayState = .hidden
     @State private var presentationProgress: CGFloat = 0
     @State private var pendingHiddenResetToken = UUID()
+    @State private var pendingCollapseToken = UUID()
+    @State private var isHoveringExpandedShell = false
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -93,17 +95,11 @@ struct NotchView: View {
                 )
                 .transition(pageSwapTransition)
             case .stocks:
-                NotchPlaceholderWidgetView(
-                    page: .stocks,
+                NotchStocksWidgetView(
                     layout: layout,
                     isExpanded: isExpanded,
                     presentationProgress: presentationProgress,
-                    selectedPage: $selectedPage,
-                    details: [
-                        "Price change by symbol",
-                        "Mini portfolio allocation strip",
-                        "News movers and alerts"
-                    ]
+                    selectedPage: $selectedPage
                 )
                 .transition(pageSwapTransition)
             case .tokenSpend:
@@ -168,9 +164,20 @@ struct NotchView: View {
         }
 
         if hovering {
+            isHoveringExpandedShell = true
+            pendingCollapseToken = UUID()
             setDisplayState(.expanded)
         } else {
-            setDisplayState(.collapsed)
+            isHoveringExpandedShell = false
+            let collapseToken = UUID()
+            pendingCollapseToken = collapseToken
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.09) { [collapseToken] in
+                guard pendingCollapseToken == collapseToken else { return }
+                guard !isHoveringExpandedShell else { return }
+                guard displayState != .hidden else { return }
+                setDisplayState(.collapsed)
+            }
         }
     }
 
@@ -187,8 +194,12 @@ struct NotchView: View {
     private func setDisplayState(_ state: DisplayState) {
         guard displayState != state else { return }
         pendingHiddenResetToken = UUID()
+        if state != .collapsed {
+            pendingCollapseToken = UUID()
+        }
         if state == .hidden {
             suppressHoverUntil = nil
+            isHoveringExpandedShell = false
         }
 
         if state == .hidden {
@@ -412,7 +423,7 @@ private final class HoverTrackingNSView: NSView {
 
         let options: NSTrackingArea.Options = [
             .mouseEnteredAndExited,
-            .activeInKeyWindow,
+            .activeAlways,
             .inVisibleRect
         ]
         addTrackingArea(NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil))

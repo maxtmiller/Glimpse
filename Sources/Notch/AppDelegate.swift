@@ -42,7 +42,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidResignActive(_ notification: Notification) {
         guard let panel, currentState != .hidden else { return }
-        panel.orderOut(nil)
+        panel.orderFrontRegardless()
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {

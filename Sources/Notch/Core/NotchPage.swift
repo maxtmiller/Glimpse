@@ -23,7 +23,7 @@ enum NotchPage: String, CaseIterable, Identifiable {
         switch self {
         case .home: return "Choose a widget"
         case .weather: return "Current conditions"
-        case .stocks: return "Watchlist scaffold"
+        case .stocks: return "Market dashboard"
         case .tokenSpend: return "Usage scaffold"
         case .settings: return "Panel preferences"
         }

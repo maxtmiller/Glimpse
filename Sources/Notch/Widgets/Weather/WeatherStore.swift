@@ -204,23 +204,3 @@ final class WeatherStore: NSObject, ObservableObject, @preconcurrency CLLocation
         NSWorkspace.shared.open(url)
     }
 }
-
-struct WeatherRootView: View {
-    @StateObject private var store = WeatherStore()
-
-    let layout: PanelLayout
-
-    var body: some View {
-        NotchWeatherView(
-            snapshot: store.snapshot,
-            layout: layout,
-            onHoverChanged: { _ in },
-            onLocationRequest: {
-                store.requestLocationAccess()
-            }
-        )
-        .onAppear {
-            store.start()
-        }
-    }
-}

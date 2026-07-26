@@ -8,12 +8,12 @@ let package = Package(
         .macOS(.v13)
     ],
     products: [
-        .executable(name: "NotchWeather", targets: ["NotchWeather"])
+        .executable(name: "Notch", targets: ["Notch"])
     ],
     targets: [
         .executableTarget(
-            name: "NotchWeather",
-            path: "Sources/NotchWeather"
+            name: "Notch",
+            path: "Sources/Notch"
         )
     ]
 )

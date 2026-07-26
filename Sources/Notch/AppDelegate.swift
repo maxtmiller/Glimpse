@@ -10,7 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         layout = PanelLayout.from(screen: NSScreen.main ?? NSScreen.screens.first)
 
-        let rootView = AnyView(WeatherRootView(layout: layout))
+        let rootView = AnyView(NotchRootView(layout: layout))
         let panel = NotchPanel(contentRect: .zero)
         panel.contentView = NSHostingView(rootView: rootView)
         self.panel = panel

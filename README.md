@@ -1,4 +1,4 @@
-# Notch Weather
+# Notch
 
 Basic macOS notch-style weather panel built with SwiftUI and AppKit.
 
@@ -20,7 +20,7 @@ Requirements:
 From the repository root:
 
 ```bash
-swift run NotchWeather
+swift run Notch
 ```
 
 That launches the panel directly.
@@ -33,14 +33,14 @@ To bundle and launch a real `.app` with the location usage strings included:
 ./scripts/bundle-macos-app.sh
 ```
 
-That creates `.build/NotchWeather.app` and opens it.
+That creates `.build/Notch.app` and opens it.
 
 If the app has not been granted location access yet, click the cloud icon to request access again. If you denied access previously, macOS will send you to System Settings so you can re-enable it there.
 
 ## Preview in Xcode
 
 1. Open the repository in Xcode by opening `Package.swift`.
-2. Open `Sources/NotchWeather/NotchWeatherView.swift`.
+2. Open `Sources/Notch/NotchView.swift`.
 3. Use the SwiftUI preview canvas on the `#Preview` block.
 
 ## Notes

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-APP_NAME="NotchWeather"
+APP_NAME="Notch"
 CONFIGURATION="${CONFIGURATION:-debug}"
 BUILD_DIR="$ROOT_DIR/.build/$CONFIGURATION"
 APP_BUNDLE="$ROOT_DIR/.build/$APP_NAME.app"
@@ -24,15 +24,15 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<'EOF'
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleExecutable</key>
-    <string>NotchWeather</string>
+    <string>Notch</string>
     <key>CFBundleIdentifier</key>
-    <string>com.maxtmiller.NotchWeather</string>
+    <string>com.maxtmiller.Notch</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>NotchWeather</string>
+    <string>Notch</string>
     <key>CFBundleDisplayName</key>
-    <string>NotchWeather</string>
+    <string>Notch</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -42,9 +42,9 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<'EOF'
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>NSLocationUsageDescription</key>
-    <string>Notch Weather uses your location to show local weather and forecast data.</string>
+    <string>Notch uses your location to show local weather and forecast data.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Notch Weather uses your location to show local weather and forecast data.</string>
+    <string>Notch uses your location to show local weather and forecast data.</string>
 </dict>
 </plist>
 EOF

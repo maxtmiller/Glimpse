@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 
 enum NotchGeometry {
     static let width: CGFloat = 205
@@ -9,6 +10,7 @@ enum NotchGeometry {
 
 enum NotchMotion {
     static let hoverAnimationDuration: Double = 0.34
+    static let pageTransitionAnimation = Animation.spring(response: 0.38, dampingFraction: 0.9, blendDuration: 0.06)
 }
 
 struct PanelLayout {

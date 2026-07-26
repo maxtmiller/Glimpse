@@ -5,6 +5,7 @@ struct NotchHomeWidgetView: View {
     let isExpanded: Bool
     let presentationProgress: CGFloat
     @Binding var selectedPage: NotchPage
+    @StateObject private var batteryMonitor = BatteryMonitor()
 
     var body: some View {
         NotchWidgetChrome(
@@ -22,7 +23,9 @@ struct NotchHomeWidgetView: View {
             },
             trailing: {
                 HStack(spacing: 5) {
-                    NotchSummaryBadge(text: "Widgets")
+                    if !isExpanded {
+                        BatteryIndicator(reading: batteryMonitor.reading)
+                    }
                 }
                 .padding(.trailing, 4)
             },
@@ -59,6 +62,45 @@ struct NotchHomeWidgetView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         )
+    }
+}
+
+private struct BatteryIndicator: View {
+    let reading: BatteryReading?
+
+    private var fillColor: Color {
+        guard let reading else { return .white.opacity(0.45) }
+        if reading.percentage <= 20 && !reading.isCharging { return .red }
+        return reading.isCharging ? .green : .white.opacity(0.88)
+    }
+
+    var body: some View {
+        HStack(spacing: 5) {
+            HStack(spacing: 1.5) {
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .stroke(Color.white.opacity(0.72), lineWidth: 1)
+
+                    GeometryReader { proxy in
+                        RoundedRectangle(cornerRadius: 2, style: .continuous)
+                            .fill(fillColor)
+                            .frame(width: proxy.size.width * CGFloat(reading?.percentage ?? 0) / 100)
+                            .padding(1.5)
+                    }
+                }
+                .frame(width: 25, height: 13)
+
+                Capsule(style: .continuous)
+                    .fill(Color.white.opacity(0.72))
+                    .frame(width: 2, height: 5)
+            }
+
+            Text(reading.map { "\($0.percentage)%" } ?? "—")
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.88))
+                .monospacedDigit()
+        }
+        .help(reading.map { "Battery: \($0.percentage)%" } ?? "Battery unavailable")
     }
 }
 

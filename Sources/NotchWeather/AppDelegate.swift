@@ -40,6 +40,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    func applicationDidResignActive(_ notification: Notification) {
+        guard let panel, currentState != .hidden else { return }
+        panel.orderOut(nil)
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        presentPanel()
+    }
+
     private var fixedPanelSize: NSSize {
         NSSize(width: layout.expandedWidth, height: layout.topBarHeight + layout.expandedBodyHeight)
     }

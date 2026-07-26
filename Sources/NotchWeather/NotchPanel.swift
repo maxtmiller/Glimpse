@@ -12,7 +12,7 @@ final class NotchPanel: NSPanel {
         hidesOnDeactivate = false
         ignoresMouseEvents = false
         animationBehavior = .none
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
+        collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
     }
 
     override var canBecomeKey: Bool { true }

@@ -233,7 +233,9 @@ struct NotchView: View {
     private func toggleCollapsedVisibility() {
         switch displayState {
         case .hidden:
-            setDisplayState(.collapsed)
+            // A click on the notch is an intentional launch gesture: reveal the
+            // selected widget directly into its full canvas.
+            setDisplayState(.expanded)
         case .collapsed, .expanded:
             setDisplayState(.hidden)
         }
@@ -255,7 +257,7 @@ struct NotchView: View {
 
         if state == .hidden {
             let resetToken = pendingHiddenResetToken
-            withAnimation(.easeInOut(duration: NotchMotion.hoverAnimationDuration)) {
+            withAnimation(NotchMotion.presentationAnimation) {
                 presentationProgress = 0
             }
 
@@ -264,13 +266,13 @@ struct NotchView: View {
                 renderedState = .hidden
             }
         } else {
-            withAnimation(.easeInOut(duration: NotchMotion.hoverAnimationDuration)) {
+            withAnimation(NotchMotion.presentationAnimation) {
                 renderedState = state
                 presentationProgress = 1
             }
         }
 
-        withAnimation(.easeInOut(duration: NotchMotion.hoverAnimationDuration)) {
+        withAnimation(NotchMotion.presentationAnimation) {
             displayState = state
         }
         NotificationCenter.default.post(

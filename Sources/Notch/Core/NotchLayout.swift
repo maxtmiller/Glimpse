@@ -11,6 +11,7 @@ enum NotchGeometry {
 enum NotchMotion {
     static let hoverAnimationDuration: Double = 0.34
     static let pageTransitionAnimation = Animation.spring(response: 0.38, dampingFraction: 0.9, blendDuration: 0.06)
+    static let presentationAnimation = Animation.spring(response: 0.46, dampingFraction: 0.86, blendDuration: 0.08)
 }
 
 struct PanelLayout {
@@ -25,23 +26,23 @@ struct PanelLayout {
             return PanelLayout(
                 topBarHeight: 60,
                 collapsedWidth: 480,
-                expandedWidth: 580,
+                expandedWidth: 640,
                 collapsedBodyHeight: 0,
-                expandedBodyHeight: 180
+                expandedBodyHeight: 190
             )
         }
 
         let hasNotch = screen.safeAreaInsets.top > 0
         let topBarHeight = hasNotch ? max(NotchGeometry.height + 16, 60) : 60
         let collapsedWidth = min(max(440, NotchGeometry.width + 260), screen.frame.width - 24)
-        let expandedWidth = min(max(580, NotchGeometry.width + 360), screen.frame.width - 24)
+        let expandedWidth = min(max(640, NotchGeometry.width + 435), screen.frame.width - 24)
 
         return PanelLayout(
             topBarHeight: topBarHeight,
             collapsedWidth: collapsedWidth,
             expandedWidth: expandedWidth,
             collapsedBodyHeight: 0,
-            expandedBodyHeight: 180
+            expandedBodyHeight: 190
         )
     }
 }

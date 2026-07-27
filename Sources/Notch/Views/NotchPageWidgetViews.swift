@@ -39,7 +39,7 @@ struct NotchHomeWidgetView: View {
 
                         Spacer(minLength: 0)
 
-                        Text("4 APPS")
+                        Text("5 APPS")
                             .font(.system(size: 9, weight: .bold, design: .rounded))
                             .foregroundStyle(.white.opacity(0.42))
                             .tracking(0.8)

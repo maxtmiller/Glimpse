@@ -15,7 +15,7 @@ struct NotchView: View {
     let onLocationRequest: () -> Void
 
     @State private var displayState: DisplayState = .hidden
-    @State private var selectedPage: NotchPage = .weather
+    @State private var selectedPage: NotchPage = .sounds
     @State private var temperatureUnit: TemperatureUnit = .fahrenheit
     @State private var forecastRange: WeatherForecastRange = .oneDay
     @State private var selectedGraphMetric: GraphMetric?
@@ -111,6 +111,14 @@ struct NotchView: View {
                 .transition(pageSwapTransition)
             case .markets:
                 NotchMarketsWidgetView(
+                    layout: layout,
+                    isExpanded: isExpanded,
+                    presentationProgress: presentationProgress,
+                    selectedPage: $selectedPage
+                )
+                .transition(pageSwapTransition)
+            case .sounds:
+                NotchSoundsWidgetView(
                     layout: layout,
                     isExpanded: isExpanded,
                     presentationProgress: presentationProgress,

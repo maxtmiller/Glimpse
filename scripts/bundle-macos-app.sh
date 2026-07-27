@@ -45,6 +45,8 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<'EOF'
     <string>Notch uses your location to show local weather and forecast data.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>Notch uses your location to show local weather and forecast data.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Notch uses Apple Events to read and control playback in supported media apps.</string>
 </dict>
 </plist>
 EOF

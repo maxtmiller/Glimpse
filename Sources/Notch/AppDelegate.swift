@@ -64,6 +64,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let frame = screen.frame
+        // Keep a small portion of the panel above the display edge so the
+        // notch remains enterable when the cursor approaches from the top.
         let topOverlap: CGFloat = 2
         let x = frame.midX - size.width / 2
         let y = frame.maxY - size.height + topOverlap
@@ -100,6 +102,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if wasInsideInteractiveRect != isInsideInteractiveRect {
             wasInsideInteractiveRect = isInsideInteractiveRect
+            // Space transitions can move the panel without delivering an
+            // AppKit mouseExited event. Keep the SwiftUI hover tracker
+            // synchronized with the screen-space hit test.
             if !isInsideInteractiveRect && currentState == .expanded {
                 NotificationCenter.default.post(name: .notchMouseExited, object: nil)
             }
@@ -116,23 +121,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func interactiveRect(for state: NotchPresentationState, in panel: NSWindow) -> NSRect {
         let frame = panel.frame
+        let padding: CGFloat = 2.0 // 2px safety margin on all sides
+
         switch state {
         case .hidden:
             let handleHeight = max(layout.topBarHeight - 16, 28)
-            return NSRect(
+            let rect = NSRect(
                 x: frame.midX - NotchGeometry.width / 2,
-                y: frame.maxY - layout.topBarHeight + (layout.topBarHeight - handleHeight) / 2,
+                y: frame.maxY - handleHeight,
                 width: NotchGeometry.width,
                 height: handleHeight
             )
+            // Inset by negative padding to grow the hit target slightly in all directions
+            return rect.insetBy(dx: -padding, dy: -padding)
+
         case .collapsed:
             let shellHeight = max(layout.topBarHeight - 4, 56)
-            return NSRect(
+            let rect = NSRect(
                 x: frame.midX - layout.collapsedWidth / 2,
                 y: frame.maxY - shellHeight,
                 width: layout.collapsedWidth,
                 height: shellHeight
             )
+            return rect.insetBy(dx: -padding, dy: -padding)
+
         case .expanded:
             return frame
         }

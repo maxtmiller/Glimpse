@@ -29,14 +29,12 @@ struct NotchView: View {
         ZStack(alignment: .top) {
             hiddenToggleLayer
                 .opacity(max(0, 1 - presentationProgress))
-                .scaleEffect(1 - (0.03 * presentationProgress), anchor: .center)
-                .offset(y: (1 - presentationProgress) * 2)
+                .scaleEffect(1 - (0.03 * presentationProgress), anchor: .top)
                 .allowsHitTesting(displayState == .hidden)
 
             visibleShell
                 .opacity(presentationProgress)
                 .scaleEffect(0.90 + (0.10 * presentationProgress), anchor: .top)
-                .offset(y: (1 - presentationProgress) * 4)
                 .allowsHitTesting(displayState != .hidden)
 
             if displayState != .hidden {
@@ -48,11 +46,11 @@ struct NotchView: View {
             height: layout.topBarHeight + layout.expandedBodyHeight,
             alignment: .top
         )
-        .ignoresSafeArea()
+        .ignoresSafeArea(.all, edges: .top) // Locks the view to the top edge of the screen frame
         .onReceive(NotificationCenter.default.publisher(for: .notchMouseExited)) { _ in
-            // The panel stops receiving AppKit mouse events as soon as the
-            // cursor leaves, so this signal must also bypass the expansion
-            // animation's hover suppression window.
+            // A Space transition can prevent the normal tracking area exit
+            // from arriving. Bypass the expansion animation's hover
+            // suppression window when AppKit reports the screen-space exit.
             suppressHoverUntil = nil
             handleHoverChange(false)
         }
@@ -70,11 +68,12 @@ struct NotchView: View {
             islandBackground
                 .frame(width: shellWidth, height: shellHeight, alignment: .top)
 
-            notchToggleButton
-                .frame(width: shellWidth, height: shellHeight, alignment: .top)
-
             selectedWidgetView
                 .frame(width: shellWidth, height: shellHeight, alignment: .top)
+
+            // Keep the top notch toggle above the widget's transparent
+            // header/center area so it remains clickable while expanded.
+            notchToggleButton
 
         }
         .frame(width: shellWidth, height: shellHeight, alignment: .top)
@@ -146,12 +145,24 @@ struct NotchView: View {
 
     private var notchToggleButton: some View {
         Button(action: toggleCollapsedVisibility) {
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .fill(.black.opacity(0.16))
-                .frame(width: NotchGeometry.width, height: max(layout.topBarHeight - 16, 28), alignment: .center)
-                .shadow(color: .black.opacity(0.22), radius: 3, y: 1)
+            UnevenRoundedRectangle(
+                cornerRadii: .init(
+                    topLeading: 0,
+                    bottomLeading: 13,
+                    bottomTrailing: 13,
+                    topTrailing: 0
+                ),
+                style: .continuous
+            )
+            .fill(.black.opacity(0.16))
+            // .padding(.horizontal, 1) // 1px visual padding on sides
+            // .padding(.bottom, 1)     // 1px visual padding on bottom
+            .frame(width: NotchGeometry.width, height: NotchGeometry.height, alignment: .top)
+            .shadow(color: .black.opacity(0.22), radius: 3, y: 1)
         }
         .buttonStyle(.plain)
+        .contentShape(Rectangle()) // Ensures the full box (including margins) catches mouse clicks
+        .ignoresSafeArea(.all, edges: .top)
     }
 
     private var hoverTrackingLayer: some View {
@@ -317,7 +328,7 @@ struct NotchView: View {
         .stroke(
             LinearGradient(
                 colors: [
-                    Color.white.opacity(0.26),
+                    Color.clear,
                     Color.white.opacity(0.08),
                     Color.black.opacity(0.26)
                 ],
@@ -453,11 +464,34 @@ private struct HoverTrackingView: NSViewRepresentable {
 private final class HoverTrackingNSView: NSView {
     var onHoverChanged: ((Bool) -> Void)?
     private var isHovering = false
+    private var mouseExitObserver: NSObjectProtocol?
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
+
+        if let mouseExitObserver {
+            NotificationCenter.default.removeObserver(mouseExitObserver)
+            self.mouseExitObserver = nil
+        }
+
+        if window != nil {
+            mouseExitObserver = NotificationCenter.default.addObserver(
+                forName: .notchMouseExited,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.resetHoverState()
+            }
+        }
+
         DispatchQueue.main.async { [weak self] in
             self?.syncHoverState()
+        }
+    }
+
+    deinit {
+        if let mouseExitObserver {
+            NotificationCenter.default.removeObserver(mouseExitObserver)
         }
     }
 
@@ -497,5 +531,12 @@ private final class HoverTrackingNSView: NSView {
 
         isHovering = hovering
         onHoverChanged?(hovering)
+    }
+
+    private func resetHoverState() {
+        guard isHovering else { return }
+
+        isHovering = false
+        onHoverChanged?(false)
     }
 }

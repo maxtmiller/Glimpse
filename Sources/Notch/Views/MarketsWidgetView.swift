@@ -135,6 +135,24 @@ struct MarketAsset: Identifiable {
     let note: String
     let historicalSparklines: [MarketTimeRange: [Double]]
 
+    static let unavailable = MarketAsset(
+        id: "unavailable",
+        symbol: "—",
+        name: "Market data unavailable",
+        category: "",
+        unit: .currency,
+        price: 0,
+        change: 0,
+        changePercent: 0,
+        dayHigh: 0,
+        dayLow: 0,
+        volumeLabel: "—",
+        sparkline: [],
+        accent: Color.white.opacity(0.35),
+        note: "Market data unavailable",
+        historicalSparklines: [:]
+    )
+
     var isPositive: Bool {
         change >= 0
     }
@@ -289,6 +307,13 @@ struct MarketSnapshot {
     func benchmark() -> MarketAsset? {
         asset(id: "sp500")
     }
+
+    static let empty = MarketSnapshot(
+        updatedAt: Date(),
+        sourceBadge: "—",
+        selectedAssetID: "",
+        assets: []
+    )
 
     static let preview: MarketSnapshot = {
         func asset(
@@ -541,13 +566,38 @@ struct MarketSnapshot {
     }()
 }
 
+private enum MarketTrend {
+    case up
+    case down
+    case flat
+    case unavailable
+
+    var symbol: String {
+        switch self {
+        case .up: return "chart.line.uptrend.xyaxis"
+        case .down: return "chart.line.downtrend.xyaxis"
+        case .flat: return "chart.line.flattrend.xyaxis"
+        case .unavailable: return "chart.line.flattrend.xyaxis"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .up: return .green
+        case .down: return .red
+        case .flat: return .yellow
+        case .unavailable: return .white.opacity(0.45)
+        }
+    }
+}
+
 struct NotchMarketsWidgetView: View {
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
     @Binding var selectedPage: NotchPage
 
-    @State private var selectedAssetID = MarketSnapshot.preview.selectedAssetID
+    @State private var selectedAssetID = MarketSnapshot.empty.selectedAssetID
     @State private var selectedRange: MarketTimeRange = .day
     @State private var selectedDisplayCurrency: MarketDisplayCurrency = .usd
     @State private var isHomeButtonHovered = false
@@ -563,11 +613,13 @@ struct NotchMarketsWidgetView: View {
             leading: {
                 HStack(spacing: 10) {
                     NotchSummaryHeader(
-                        icon: "chart.line.uptrend.xyaxis",
+                        icon: marketTrend.symbol,
                         title: "Markets",
-                        subtitle: selectedAsset.name,
-                        accent: Color.green,
-                        showsSubtitle: isExpanded
+                        subtitle: hasMarketData ? selectedAsset.name : "Data unavailable",
+                        accent: marketTrend.color,
+                        showsSubtitle: isExpanded,
+                        iconAction: marketStore.refreshNow,
+                        iconHelp: "Refresh market data"
                     )
 
                     if isExpanded {
@@ -625,75 +677,87 @@ struct NotchMarketsWidgetView: View {
             },
             expanded: {
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack(alignment: .top, spacing: 10) {
+                    if hasMarketData {
                         let selectedPerformance = selectedAsset.performance(for: selectedRange, displayCurrency: selectedDisplayCurrency)
                         let selectedMetrics = selectedAsset.rangeMetrics(for: selectedRange, displayCurrency: selectedDisplayCurrency)
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(selectedAsset.name) · \(selectedAsset.category)")
-                                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                .foregroundStyle(.white)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-
-                            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                Text(selectedAsset.priceLabel(displayCurrency: selectedDisplayCurrency))
-                                    .font(.system(size: 19, weight: .bold, design: .rounded))
+                        HStack(alignment: .top, spacing: 10) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("\(selectedAsset.name) · \(selectedAsset.category)")
+                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
                                     .foregroundStyle(.white)
-                                    .contentTransition(.numericText())
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
 
-                                Text(selectedPerformance.changeLabel)
-                                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                                    .foregroundStyle(selectedPerformance.isPositive ? Color.green.opacity(0.92) : Color.red.opacity(0.92))
-                                    .padding(.horizontal, 7)
-                                    .padding(.vertical, 3)
-                                    .background(
-                                        Capsule(style: .continuous)
-                                            .fill((selectedPerformance.isPositive ? Color.green : Color.red).opacity(0.15))
-                                    )
+                                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                    Text(selectedAsset.priceLabel(displayCurrency: selectedDisplayCurrency))
+                                        .font(.system(size: 19, weight: .bold, design: .rounded))
+                                        .foregroundStyle(.white)
+                                        .contentTransition(.numericText())
+
+                                    Text(selectedPerformance.changeLabel)
+                                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                                        .foregroundStyle(selectedPerformance.isPositive ? Color.green.opacity(0.92) : Color.red.opacity(0.92))
+                                        .padding(.horizontal, 7)
+                                        .padding(.vertical, 3)
+                                        .background(
+                                            Capsule(style: .continuous)
+                                                .fill((selectedPerformance.isPositive ? Color.green : Color.red).opacity(0.15))
+                                        )
+                                }
+
+                                Text(selectedAsset.note)
+                                    .font(.system(size: 8.8, weight: .medium, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.54))
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
                             }
 
-                            Text(selectedAsset.note)
-                                .font(.system(size: 8.8, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.54))
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                        }
+                            Spacer(minLength: 0)
 
-                        Spacer(minLength: 0)
-
-                        VStack(alignment: .trailing, spacing: 2) {
-                            statRow(title: "High", value: selectedMetrics.highLabel)
-                            statRow(title: "Low", value: selectedMetrics.lowLabel)
-                            statRow(title: "Vol", value: selectedMetrics.volumeLabel)
+                            VStack(alignment: .trailing, spacing: 2) {
+                                statRow(title: "High", value: selectedMetrics.highLabel)
+                                statRow(title: "Low", value: selectedMetrics.lowLabel)
+                                statRow(title: "Vol", value: selectedMetrics.volumeLabel)
+                            }
                         }
+                    } else {
+                        unavailableSummary
                     }
 
-                    MarketHeroChart(asset: selectedAsset, range: selectedRange)
+                    MarketHeroChart(asset: hasMarketData ? selectedAsset : nil, range: selectedRange)
                         .frame(height: 68)
 
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(snapshot.assets) { asset in
-                                MarketAssetCard(
-                                    asset: asset,
-                                    isSelected: selectedAssetID == asset.id,
-                                    isHovered: hoveredAssetID == asset.id,
-                                    range: selectedRange,
-                                    displayCurrency: selectedDisplayCurrency
-                                ) {
-                                    withAnimation(NotchMotion.pageTransitionAnimation) {
-                                        selectedAssetID = asset.id
+                    if hasMarketData {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(snapshot.assets) { asset in
+                                    MarketAssetCard(
+                                        asset: asset,
+                                        isSelected: selectedAssetID == asset.id,
+                                        isHovered: hoveredAssetID == asset.id,
+                                        range: selectedRange,
+                                        displayCurrency: selectedDisplayCurrency
+                                    ) {
+                                        withAnimation(NotchMotion.pageTransitionAnimation) {
+                                            selectedAssetID = asset.id
+                                        }
+                                    }
+                                    .onHover { hovering in
+                                        hoveredAssetID = hovering ? asset.id : (hoveredAssetID == asset.id ? nil : hoveredAssetID)
                                     }
                                 }
-                                .onHover { hovering in
-                                    hoveredAssetID = hovering ? asset.id : (hoveredAssetID == asset.id ? nil : hoveredAssetID)
-                                }
                             }
+                            .padding(.horizontal, 1)
                         }
-                        .padding(.horizontal, 1)
+                        .frame(height: 46)
+                    } else {
+                        Text("No market data available")
+                            .font(.system(size: 10, weight: .medium, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.45))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(height: 46, alignment: .center)
                     }
-                    .frame(height: 46)
                 }
                 .padding(.horizontal, 10)
                 .padding(.top, 1)
@@ -708,7 +772,33 @@ struct NotchMarketsWidgetView: View {
     }
 
     private var selectedAsset: MarketAsset {
-        snapshot.asset(id: selectedAssetID) ?? snapshot.asset(id: snapshot.selectedAssetID) ?? snapshot.assets[0]
+        snapshot.asset(id: selectedAssetID)
+            ?? snapshot.asset(id: snapshot.selectedAssetID)
+            ?? snapshot.assets.first
+            ?? MarketAsset.unavailable
+    }
+
+    private var hasMarketData: Bool {
+        !snapshot.assets.isEmpty
+    }
+
+    private var marketTrend: MarketTrend {
+        guard hasMarketData else { return .unavailable }
+
+        let benchmarkChanges = ["sp500", "dow"]
+            .compactMap { snapshot.asset(id: $0)?.changePercent }
+
+        let averageChange = benchmarkChanges.isEmpty
+            ? (snapshot.assets.map(\.changePercent).reduce(0, +) / Double(max(snapshot.assets.count, 1)))
+            : benchmarkChanges.reduce(0, +) / Double(benchmarkChanges.count)
+
+        if averageChange > 0.05 {
+            return .up
+        } else if averageChange < -0.05 {
+            return .down
+        } else {
+            return .flat
+        }
     }
 
     private var trackedTickerAssets: [MarketAsset] {
@@ -740,6 +830,28 @@ struct NotchMarketsWidgetView: View {
                 .font(.system(size: 11.5, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
                 .contentTransition(.numericText())
+        }
+    }
+
+    private var unavailableSummary: some View {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Market data unavailable")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+
+                Text(marketStore.errorMessage == nil ? "Loading market data…" : "Click the chart icon to retry")
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.54))
+            }
+
+            Spacer(minLength: 0)
+
+            VStack(alignment: .trailing, spacing: 2) {
+                statRow(title: "High", value: "—")
+                statRow(title: "Low", value: "—")
+                statRow(title: "Vol", value: "—")
+            }
         }
     }
 }
@@ -940,16 +1052,18 @@ private struct MarketAssetCard: View {
 }
 
 private struct MarketHeroChart: View {
-    let asset: MarketAsset
+    let asset: MarketAsset?
     let range: MarketTimeRange
 
     var body: some View {
+        let accent = asset?.accent ?? Color.white.opacity(0.25)
+
         ZStack(alignment: .bottom) {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
-                            asset.accent.opacity(0.18),
+                            accent.opacity(0.18),
                             Color.white.opacity(0.04)
                         ],
                         startPoint: .topLeading,
@@ -962,20 +1076,22 @@ private struct MarketHeroChart: View {
                 )
 
             GeometryReader { geometry in
-                MarketSparkline(
-                    values: asset.sparkline(for: range),
-                    accent: asset.accent,
-                    lineWidth: 2.2,
-                    fillOpacity: 0.22,
-                    showLastPoint: true
-                )
-                .padding(.horizontal, 8)
-                .padding(.top, 6)
-                .padding(.bottom, 12)
-                .frame(width: geometry.size.width, height: geometry.size.height)
+                if let asset {
+                    MarketSparkline(
+                        values: asset.sparkline(for: range),
+                        accent: asset.accent,
+                        lineWidth: 2.2,
+                        fillOpacity: 0.22,
+                        showLastPoint: true
+                    )
+                    .padding(.horizontal, 8)
+                    .padding(.top, 6)
+                    .padding(.bottom, 12)
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                }
             }
 
-            MarketChartAxisLabels(labels: range.chartLabels)
+            MarketChartAxisLabels(labels: asset == nil ? ["—", "—", "—"] : range.chartLabels)
                 .padding(.horizontal, 6)
                 .padding(.bottom, 4)
         }

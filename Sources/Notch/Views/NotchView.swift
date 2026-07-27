@@ -10,12 +10,14 @@ struct NotchView: View {
 
     let snapshot: WeatherSnapshot
     let layout: PanelLayout
+    let onForecastRangeChange: (WeatherForecastRange) -> Void
     let onHoverChanged: (Bool) -> Void
     let onLocationRequest: () -> Void
 
     @State private var displayState: DisplayState = .hidden
     @State private var selectedPage: NotchPage = .weather
     @State private var temperatureUnit: TemperatureUnit = .fahrenheit
+    @State private var forecastRange: WeatherForecastRange = .oneDay
     @State private var selectedGraphMetric: GraphMetric?
     @State private var renderedState: DisplayState = .hidden
     @State private var presentationProgress: CGFloat = 0
@@ -53,6 +55,9 @@ struct NotchView: View {
             // suppression window when AppKit reports the screen-space exit.
             suppressHoverUntil = nil
             handleHoverChange(false)
+        }
+        .onChange(of: forecastRange) { newRange in
+            onForecastRangeChange(newRange)
         }
     }
 
@@ -99,6 +104,7 @@ struct NotchView: View {
                     presentationProgress: presentationProgress,
                     selectedPage: $selectedPage,
                     temperatureUnit: $temperatureUnit,
+                    forecastRange: $forecastRange,
                     selectedGraphMetric: $selectedGraphMetric,
                     onLocationRequest: onLocationRequest
                 )

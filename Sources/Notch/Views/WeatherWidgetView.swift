@@ -11,6 +11,13 @@ enum TemperatureUnit {
         }
     }
 
+    var windSpeedUnit: String {
+        switch self {
+        case .fahrenheit: return "mph"
+        case .celsius: return "km/h"
+        }
+    }
+
     var toggled: TemperatureUnit {
         switch self {
         case .fahrenheit: return .celsius
@@ -30,7 +37,7 @@ enum GraphMetric: Hashable {
         case .temperature: return "Temperature"
         case .feelsLike: return "Feels like"
         case .humidity: return "Humidity"
-        case .wind: return "Wind (mph)"
+        case .wind: return "Wind"
         }
     }
 
@@ -51,6 +58,7 @@ struct WeatherWidgetView: View {
     let presentationProgress: CGFloat
     @Binding var selectedPage: NotchPage
     @Binding var temperatureUnit: TemperatureUnit
+    @Binding var forecastRange: WeatherForecastRange
     @Binding var selectedGraphMetric: GraphMetric?
     let onLocationRequest: () -> Void
 
@@ -153,6 +161,9 @@ struct WeatherWidgetView: View {
 
                     temperatureChip
                     unitToggleButton
+                    if isExpanded {
+                        forecastRangeButton
+                    }
                 }
                 .padding(.trailing, 4)
             },
@@ -188,7 +199,12 @@ struct WeatherWidgetView: View {
                         width: 84
                     )
                     metricPill(metric: .humidity, title: "Humidity", value: displayMetricValue(snapshot.humidity, suffix: "%"), width: 76)
-                    metricPill(metric: .wind, title: "Wind", value: displayMetricValue(snapshot.wind, suffix: " mph"), width: 72)
+                    metricPill(
+                        metric: .wind,
+                        title: "Wind",
+                        value: displayMetricValue(convertedWind(snapshot.wind), suffix: " \(temperatureUnit.windSpeedUnit)"),
+                        width: 72
+                    )
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
 
@@ -253,6 +269,29 @@ struct WeatherWidgetView: View {
         .help("Switch to \(temperatureUnit.toggled.displaySymbol)")
     }
 
+    private var forecastRangeButton: some View {
+        Button {
+            withAnimation(.easeInOut(duration: NotchMotion.hoverAnimationDuration)) {
+                forecastRange = forecastRange.next
+            }
+        } label: {
+            Text(forecastRange.shortTitle)
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white)
+                .frame(width: 30, height: 26)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(Color.white.opacity(0.15))
+                )
+                .overlay(
+                    Capsule(style: .continuous)
+                        .stroke(Color.white.opacity(0.28), lineWidth: 1)
+                )
+        }
+        .buttonStyle(InteractiveButtonStyle())
+        .help("Forecast range: \(forecastRange.apiDays) day\(forecastRange.apiDays == 1 ? "" : "s"). Click to change.")
+    }
+
     private func metricPill(metric: GraphMetric, title: String, value: String, width: CGFloat) -> some View {
         let isSelected = selectedGraphMetric == metric
         let isHovered = hoveredMetric == metric
@@ -291,7 +330,7 @@ struct WeatherWidgetView: View {
     private var forecastGraph: some View {
         VStack(alignment: .leading, spacing: 6) {
             if snapshot.hasLiveData {
-                Text(selectedGraphMetric?.title ?? GraphMetric.temperature.title)
+                Text(graphTitle)
                     .font(.system(size: 10.5, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.62))
 
@@ -345,12 +384,14 @@ struct WeatherWidgetView: View {
                             }
 
                             ForEach(Array(points.enumerated()), id: \.offset) { index, point in
-                                let isCurrentHour = isCurrentHour(snapshot.hourly[index], at: timeline.date)
+                                let isCurrentHour = isCurrentHour(graphHours[index], at: timeline.date)
+                                let shouldShowValueLabel = shouldShowGraphValueLabel(total: values.count)
 
                                 VStack(spacing: 3) {
-                                    Text(graphValueLabel(values[index], metric: metric, hour: snapshot.hourly[index]))
+                                    Text(graphValueLabel(values[index], metric: metric, hour: graphHours[index]))
                                         .font(.system(size: 9.5, weight: .semibold, design: .rounded))
                                         .foregroundStyle(isCurrentHour ? Color.red.opacity(0.95) : Color.white.opacity(0.78))
+                                        .opacity(shouldShowValueLabel ? 1 : 0)
                                         .contentTransition(.numericText())
 
                                     Circle()
@@ -367,10 +408,10 @@ struct WeatherWidgetView: View {
                 .frame(height: 72)
 
                 HStack(spacing: 0) {
-                    ForEach(snapshot.hourly) { hour in
+                    ForEach(Array(graphHours.enumerated()), id: \.element.id) { index, hour in
                         Group {
-                            if shouldShowGraphTimeLabel(at: hour.hour, total: snapshot.hourly.count) {
-                                Text(hour.hour)
+                            if shouldShowGraphTimeLabel(for: hour, at: index, total: graphHours.count) {
+                                Text(graphTimeLabel(for: hour))
                                     .font(.system(size: 10.0, weight: .medium, design: .rounded))
                                     .foregroundStyle(Color.white.opacity(0.58))
                                     .fixedSize(horizontal: true, vertical: false)
@@ -438,7 +479,7 @@ struct WeatherWidgetView: View {
     }
 
     private func graphSeries(for metric: GraphMetric) -> [Double] {
-        snapshot.hourly.map { hour in
+        graphHours.map { hour in
             let temp = Double(convertedTemperature(hour.temperature))
             switch metric {
             case .temperature:
@@ -448,9 +489,24 @@ struct WeatherWidgetView: View {
             case .humidity:
                 return Double(hour.humidity)
             case .wind:
-                return Double(hour.wind)
+                return Double(convertedWind(hour.wind))
             }
         }
+    }
+
+    private var graphHours: [WeatherSnapshot.HourlyForecast] {
+        guard snapshot.hourly.count > 25 else { return snapshot.hourly }
+
+        let step = Int(ceil(Double(snapshot.hourly.count - 1) / 24.0))
+        var sampled = snapshot.hourly.enumerated().compactMap { index, hour in
+            index % step == 0 ? hour : nil
+        }
+
+        if let last = snapshot.hourly.last, sampled.last?.id != last.id {
+            sampled.append(last)
+        }
+
+        return sampled
     }
 
     private func isCurrentHour(_ hour: WeatherSnapshot.HourlyForecast, at date: Date) -> Bool {
@@ -497,6 +553,26 @@ struct WeatherWidgetView: View {
         }
     }
 
+    private var graphTitle: String {
+        switch selectedGraphMetric {
+        case .wind:
+            return "Wind (\(temperatureUnit.windSpeedUnit))"
+        case .some(let metric):
+            return metric.title
+        case .none:
+            return GraphMetric.temperature.title
+        }
+    }
+
+    private func convertedWind(_ value: Int) -> Int {
+        switch temperatureUnit {
+        case .fahrenheit:
+            return value
+        case .celsius:
+            return Int((Double(value) * 1.60934).rounded())
+        }
+    }
+
     private func windArrow(for degrees: Int) -> String {
         let normalized = ((degrees % 360) + 360) % 360
         switch normalized {
@@ -519,14 +595,62 @@ struct WeatherWidgetView: View {
         }
     }
 
-    private func shouldShowGraphTimeLabel(at hourLabel: String, total: Int) -> Bool {
+    private func shouldShowGraphTimeLabel(for hour: WeatherSnapshot.HourlyForecast, at index: Int, total: Int) -> Bool {
         guard total > 0 else { return false }
 
-        if hourLabel == snapshot.hourly.first?.hour || hourLabel == snapshot.hourly.last?.hour {
+        if index == 0 {
             return true
         }
 
-        return snapshot.hourly.firstIndex(where: { $0.hour == hourLabel }).map { $0 % 4 == 0 } ?? false
+        guard forecastRange != .oneDay,
+              let firstDate = graphHours.first?.date else {
+            return index % 4 == 0
+        }
+
+        if forecastRange == .threeDays && index == total - 1 {
+            return true
+        }
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = currentTimeZone()
+        let isNewDay = !calendar.isDate(hour.date, equalTo: graphHours[index - 1].date, toGranularity: .day)
+        let dayOffset = calendar.dateComponents([.day], from: firstDate, to: hour.date).day ?? 0
+        let interval: Int
+        switch forecastRange {
+        case .threeDays: interval = 1
+        case .sevenDays: interval = 2
+        case .sixteenDays: interval = 3
+        case .oneDay: interval = 1
+        }
+
+        let previousDayOffset = calendar.dateComponents([.day], from: firstDate, to: graphHours[index - 1].date).day ?? 0
+        return isNewDay && dayOffset > 0 && dayOffset / interval != previousDayOffset / interval
+    }
+
+    private func graphTimeLabel(for hour: WeatherSnapshot.HourlyForecast) -> String {
+        guard forecastRange != .oneDay else { return hour.hour }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = currentTimeZone()
+        formatter.dateFormat = forecastRange == .sixteenDays ? "MMM d" : "EEE"
+        let labelDate: Date
+        if forecastRange == .threeDays && hour.id == graphHours.last?.id {
+            labelDate = calendar(for: hour.date).date(byAdding: .day, value: 1, to: hour.date) ?? hour.date
+        } else {
+            labelDate = hour.date
+        }
+        return formatter.string(from: labelDate)
+    }
+
+    private func calendar(for date: Date) -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = currentTimeZone()
+        return calendar
+    }
+
+    private func shouldShowGraphValueLabel(total: Int) -> Bool {
+        return total > 0
     }
 
     private func temperatureDisplay(_ value: Int) -> String {

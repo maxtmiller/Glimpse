@@ -13,6 +13,7 @@ final class WeatherStore: NSObject, ObservableObject, @preconcurrency CLLocation
     private var hasRequestedAuthorization = false
     private var hasStarted = false
     private var lastContext: WeatherContext?
+    private var forecastRange: WeatherForecastRange = .oneDay
 
     private struct WeatherContext {
         let location: CLLocation
@@ -74,6 +75,17 @@ final class WeatherStore: NSObject, ObservableObject, @preconcurrency CLLocation
         }
     }
 
+    func setForecastRange(_ range: WeatherForecastRange) {
+        guard forecastRange != range else { return }
+        forecastRange = range
+
+        guard let context = lastContext else { return }
+        weatherTask?.cancel()
+        weatherTask = Task { [weak self] in
+            await self?.refreshLiveWeather(for: context)
+        }
+    }
+
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         switch manager.authorizationStatus {
         case .authorized, .authorizedAlways:
@@ -124,7 +136,8 @@ final class WeatherStore: NSObject, ObservableObject, @preconcurrency CLLocation
                 for: location,
                 city: city,
                 region: region,
-                country: country
+                country: country,
+                forecastRange: forecastRange
             )
             withAnimation(.easeInOut(duration: 0.45)) {
                 snapshot = liveSnapshot
@@ -137,16 +150,18 @@ final class WeatherStore: NSObject, ObservableObject, @preconcurrency CLLocation
         }
     }
 
-    private func refreshLiveWeather() async {
-        guard let context = lastContext else { return }
+    private func refreshLiveWeather(for context: WeatherContext? = nil) async {
+        guard let context = context ?? lastContext else { return }
 
         do {
             let liveSnapshot = try await OpenMeteoWeatherService.fetchSnapshot(
                 for: context.location,
                 city: context.city,
                 region: context.region,
-                country: context.country
+                country: context.country,
+                forecastRange: forecastRange
             )
+            guard !Task.isCancelled else { return }
             withAnimation(.easeInOut(duration: 0.45)) {
                 snapshot = liveSnapshot
             }

@@ -1,5 +1,32 @@
 import Foundation
 
+enum WeatherForecastRange: CaseIterable, Equatable {
+    case oneDay
+    case threeDays
+    case sevenDays
+    case sixteenDays
+
+    var apiDays: Int {
+        switch self {
+        case .oneDay: return 1
+        case .threeDays: return 3
+        case .sevenDays: return 7
+        case .sixteenDays: return 16
+        }
+    }
+
+    var shortTitle: String { "\(apiDays)D" }
+
+    var next: WeatherForecastRange {
+        switch self {
+        case .oneDay: return .threeDays
+        case .threeDays: return .sevenDays
+        case .sevenDays: return .sixteenDays
+        case .sixteenDays: return .oneDay
+        }
+    }
+}
+
 struct WeatherSnapshot {
     struct HourlyForecast: Identifiable {
         let id = UUID()

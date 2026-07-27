@@ -4,7 +4,7 @@ import SwiftUI
 
 @MainActor
 final class MarketStore: ObservableObject {
-    @Published private(set) var snapshot: MarketSnapshot = .preview
+    @Published private(set) var snapshot: MarketSnapshot = .empty
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
 

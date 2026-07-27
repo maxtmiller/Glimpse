@@ -59,7 +59,7 @@ enum YahooFinanceMarketService {
             updatedAt: Date(),
             sourceBadge: "YAHOO",
             selectedAssetID: preview.selectedAssetID,
-            assets: preview.assets.map { assets[$0.id] ?? $0 }
+            assets: preview.assets.compactMap { assets[$0.id] }
         )
     }
 

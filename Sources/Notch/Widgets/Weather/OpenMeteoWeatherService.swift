@@ -6,24 +6,26 @@ enum OpenMeteoWeatherService {
         for location: CLLocation,
         city: String,
         region: String,
-        country: String
+        country: String,
+        forecastRange: WeatherForecastRange
     ) async throws -> WeatherSnapshot {
-        let response = try await fetchResponse(for: location)
+        let response = try await fetchResponse(for: location, forecastRange: forecastRange)
         return makeSnapshot(
             from: response,
             city: city,
             region: region,
-            country: country
+            country: country,
+            forecastRange: forecastRange
         )
     }
 
-    private static func fetchResponse(for location: CLLocation) async throws -> [String: Any] {
+    private static func fetchResponse(for location: CLLocation, forecastRange: WeatherForecastRange) async throws -> [String: Any] {
         var components = URLComponents(string: "https://api.open-meteo.com/v1/forecast")!
         components.queryItems = [
             URLQueryItem(name: "latitude", value: String(location.coordinate.latitude)),
             URLQueryItem(name: "longitude", value: String(location.coordinate.longitude)),
             URLQueryItem(name: "timezone", value: "auto"),
-            URLQueryItem(name: "forecast_days", value: "2"),
+            URLQueryItem(name: "forecast_days", value: String(forecastRange.apiDays)),
             URLQueryItem(name: "temperature_unit", value: "fahrenheit"),
             URLQueryItem(name: "wind_speed_unit", value: "mph"),
             URLQueryItem(
@@ -62,7 +64,8 @@ enum OpenMeteoWeatherService {
         from response: [String: Any],
         city: String,
         region: String,
-        country: String
+        country: String,
+        forecastRange: WeatherForecastRange
     ) -> WeatherSnapshot {
         let timeZone = TimeZone(identifier: stringValue(response, key: "timezone") ?? "") ?? .current
         var calendar = Calendar(identifier: .gregorian)
@@ -113,7 +116,7 @@ enum OpenMeteoWeatherService {
         let windDirections = doubleArrayValue(hourlyPayload, key: "wind_direction_10m") ?? doubleArrayValue(hourlyPayload, key: "windDirection10m") ?? []
         let weatherCodes = intArrayValue(hourlyPayload, key: "weather_code") ?? intArrayValue(hourlyPayload, key: "weatherCode") ?? intArrayValue(hourlyPayload, key: "weathercode") ?? []
 
-        let hourlyCount = min(25, times.count)
+        let hourlyCount = min(forecastRange.apiDays * 24 + 1, times.count)
 
         let hourlyForecasts = (0..<hourlyCount).compactMap { index -> WeatherSnapshot.HourlyForecast? in
             guard let date = parseForecastDate(times[index], timeZone: timeZone) else {
@@ -130,7 +133,7 @@ enum OpenMeteoWeatherService {
 
             return WeatherSnapshot.HourlyForecast(
                 date: date,
-                hour: hourLabel(for: date, timeZone: timeZone),
+                hour: hourLabel(for: date, timeZone: timeZone, forecastRange: forecastRange),
                 symbol: symbolName(for: hourCode, isDay: hourIsDay),
                 temperature: hourTemperature,
                 feelsLike: hourFeelsLike,
@@ -177,11 +180,11 @@ enum OpenMeteoWeatherService {
         return isoFormatter.date(from: value)
     }
 
-    private static func hourLabel(for date: Date, timeZone: TimeZone) -> String {
+    private static func hourLabel(for date: Date, timeZone: TimeZone, forecastRange: WeatherForecastRange) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = timeZone
-        formatter.dateFormat = "ha"
+        formatter.dateFormat = forecastRange == .oneDay ? "ha" : "EEE ha"
         return formatter.string(from: date).lowercased().replacingOccurrences(of: " ", with: "")
     }
 

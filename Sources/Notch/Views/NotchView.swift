@@ -119,6 +119,14 @@ struct NotchView: View {
                     selectedPage: $selectedPage
                 )
                 .transition(pageSwapTransition)
+            case .meetings:
+                NotchMeetingsWidgetView(
+                    layout: layout,
+                    isExpanded: isExpanded,
+                    presentationProgress: presentationProgress,
+                    selectedPage: $selectedPage
+                )
+                .transition(pageSwapTransition)
             case .tokenSpend:
                 NotchPlaceholderWidgetView(
                     page: .tokenSpend,

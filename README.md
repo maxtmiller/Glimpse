@@ -10,6 +10,8 @@ Basic macOS notch-style weather and market panel built with SwiftUI and AppKit.
 - Expands on hover to show extra market or weather details
 - Pulls live location and weather data from a public weather API after you approve location access
 - Shows live playback from Music or Spotify, including the source app and playback controls
+- Provides a Meetings widget for system-wide default microphone mute and speaker deafen controls
+- Shows the frontmost app, camera-in-use status, microphone activity, and selectable audio devices
 
 ## Run it
 

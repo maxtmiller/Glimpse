@@ -5,6 +5,7 @@ enum NotchPage: String, CaseIterable, Identifiable {
     case weather
     case markets
     case sounds
+    case meetings
     case tokenSpend
     case settings
 
@@ -16,6 +17,7 @@ enum NotchPage: String, CaseIterable, Identifiable {
         case .weather: return "Weather"
         case .markets: return "Markets"
         case .sounds: return "Playing"
+        case .meetings: return "Meetings"
         case .tokenSpend: return "Token Spend"
         case .settings: return "Settings"
         }
@@ -27,6 +29,7 @@ enum NotchPage: String, CaseIterable, Identifiable {
         case .weather: return "Current conditions"
         case .markets: return "Market dashboard"
         case .sounds: return "Computer audio"
+        case .meetings: return "Mic, camera & audio"
         case .tokenSpend: return "Usage scaffold"
         case .settings: return "Panel preferences"
         }
@@ -38,6 +41,7 @@ enum NotchPage: String, CaseIterable, Identifiable {
         case .weather: return "cloud.sun.fill"
         case .markets: return "chart.line.uptrend.xyaxis"
         case .sounds: return "waveform"
+        case .meetings: return "video.fill"
         case .tokenSpend: return "chart.pie.fill"
         case .settings: return "gearshape.fill"
         }
@@ -49,6 +53,7 @@ enum NotchPage: String, CaseIterable, Identifiable {
         case .weather: return Color.orange
         case .markets: return Color.green
         case .sounds: return Color.purple
+        case .meetings: return Color.red
         case .tokenSpend: return Color.blue
         case .settings: return Color.white.opacity(0.9)
         }

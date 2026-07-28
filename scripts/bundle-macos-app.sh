@@ -47,6 +47,10 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<'EOF'
     <string>Notch uses your location to show local weather and forecast data.</string>
     <key>NSAppleEventsUsageDescription</key>
     <string>Notch uses Apple Events to read and control playback in supported media apps.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Notch uses the microphone level to show meeting audio activity.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Notch checks whether the camera is currently in use during meetings.</string>
 </dict>
 </plist>
 EOF

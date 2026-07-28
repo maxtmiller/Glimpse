@@ -34,9 +34,9 @@ enum YahooFinanceMarketService {
         let close: [Double?]?
     }
 
-    static func fetchSnapshot(from preview: MarketSnapshot) async throws -> MarketSnapshot {
+    static func fetchSnapshot(from assetsToFetch: [MarketAsset]) async throws -> MarketSnapshot {
         let assets = await withTaskGroup(of: (String, MarketAsset?).self, returning: [String: MarketAsset].self) { group in
-            for asset in preview.assets {
+            for asset in assetsToFetch {
                 group.addTask {
                     (asset.id, try? await fetchAsset(asset))
                 }
@@ -58,8 +58,8 @@ enum YahooFinanceMarketService {
         return MarketSnapshot(
             updatedAt: Date(),
             sourceBadge: "YAHOO",
-            selectedAssetID: preview.selectedAssetID,
-            assets: preview.assets.compactMap { assets[$0.id] }
+            selectedAssetID: assetsToFetch.first(where: { $0.id == "sp500" })?.id ?? assetsToFetch.first?.id ?? "",
+            assets: assetsToFetch.compactMap { assets[$0.id] }
         )
     }
 

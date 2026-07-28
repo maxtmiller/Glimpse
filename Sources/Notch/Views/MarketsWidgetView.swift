@@ -315,22 +315,15 @@ struct MarketSnapshot {
         assets: []
     )
 
-    static let preview: MarketSnapshot = {
+    static let marketUniverse: [MarketAsset] = {
         func asset(
             _ id: String,
             symbol: String,
             name: String,
             category: String,
             unit: MarketQuoteUnit,
-            price: Double,
-            change: Double,
-            changePercent: Double,
-            high: Double,
-            low: Double,
-            volume: String,
             accent: Color,
-            note: String,
-            sparkline: [Double]
+            note: String
         ) -> MarketAsset {
             MarketAsset(
                 id: id,
@@ -338,231 +331,34 @@ struct MarketSnapshot {
                 name: name,
                 category: category,
                 unit: unit,
-                price: price,
-                change: change,
-                changePercent: changePercent,
-                dayHigh: high,
-                dayLow: low,
-                volumeLabel: volume,
-                sparkline: sparkline,
+                price: 0,
+                change: 0,
+                changePercent: 0,
+                dayHigh: 0,
+                dayLow: 0,
+                volumeLabel: "—",
+                sparkline: [],
                 accent: accent,
                 note: note,
                 historicalSparklines: [:]
             )
         }
 
-        let gold = asset(
-            "gold",
-            symbol: "XAUUSD",
-            name: "Gold",
-            category: "Commodity",
-            unit: .currency,
-            price: 2398.42,
-            change: 14.22,
-            changePercent: 0.60,
-            high: 2408.11,
-            low: 2382.19,
-            volume: "18.2M",
-            accent: Color.orange,
-            note: "Safe-haven bid and rate sensitivity.",
-            sparkline: [2374, 2380, 2378, 2386, 2392, 2389, 2398, 2404, 2399, 2401, 2396, 2398]
-        )
-        let bitcoin = asset(
-            "bitcoin",
-            symbol: "BTCUSD",
-            name: "Bitcoin",
-            category: "Crypto",
-            unit: .currency,
-            price: 67421.88,
-            change: 1220.44,
-            changePercent: 1.84,
-            high: 68155.00,
-            low: 66102.18,
-            volume: "1.9B",
-            accent: Color.green,
-            note: "Risk appetite and liquidity proxy.",
-            sparkline: [65420, 65810, 66250, 66030, 66480, 66620, 66810, 67140, 67390, 67580, 67620, 67422]
-        )
-        let sp500 = asset(
-            "sp500",
-            symbol: "SPX",
-            name: "S&P 500",
-            category: "Index",
-            unit: .points,
-            price: 5625.17,
-            change: 31.84,
-            changePercent: 0.57,
-            high: 5628.20,
-            low: 5588.91,
-            volume: "3.4B",
-            accent: Color.cyan,
-            note: "Broad market benchmark.",
-            sparkline: [5568, 5582, 5579, 5591, 5604, 5598, 5610, 5618, 5611, 5620, 5624, 5625]
-        )
-        let dowJones = asset(
-            "dow",
-            symbol: "DJI",
-            name: "Dow Jones",
-            category: "Index",
-            unit: .points,
-            price: 39914.11,
-            change: -42.60,
-            changePercent: -0.11,
-            high: 40001.77,
-            low: 39842.12,
-            volume: "512M",
-            accent: Color.blue,
-            note: "Heavyweight industrials and financials.",
-            sparkline: [39980, 39940, 39962, 39918, 39910, 39955, 39920, 39908, 39932, 39900, 39888, 39914]
-        )
-        let apple = asset(
-            "aapl",
-            symbol: "AAPL",
-            name: "Apple",
-            category: "Large cap",
-            unit: .currency,
-            price: 221.43,
-            change: 3.11,
-            changePercent: 1.42,
-            high: 222.18,
-            low: 217.82,
-            volume: "88M",
-            accent: Color.blue,
-            note: "Mega-cap software and hardware mix.",
-            sparkline: [216.8, 217.9, 218.3, 219.1, 218.7, 219.8, 220.4, 220.9, 221.4, 221.8, 222.0, 221.4]
-        )
-        let microsoft = asset(
-            "msft",
-            symbol: "MSFT",
-            name: "Microsoft",
-            category: "Large cap",
-            unit: .currency,
-            price: 457.92,
-            change: 2.78,
-            changePercent: 0.61,
-            high: 459.10,
-            low: 452.33,
-            volume: "39M",
-            accent: Color.green,
-            note: "Defensive growth and AI exposure.",
-            sparkline: [451.2, 452.1, 452.8, 453.4, 454.8, 455.0, 456.2, 455.8, 456.7, 457.0, 458.1, 457.9]
-        )
-        let nvidia = asset(
-            "nvda",
-            symbol: "NVDA",
-            name: "NVIDIA",
-            category: "Trending",
-            unit: .currency,
-            price: 123.67,
-            change: 4.95,
-            changePercent: 4.17,
-            high: 124.80,
-            low: 117.52,
-            volume: "241M",
-            accent: Color.yellow,
-            note: "AI semis continue to lead momentum.",
-            sparkline: [117.8, 118.2, 119.1, 119.4, 120.3, 121.6, 122.0, 122.7, 123.2, 123.9, 124.4, 123.7]
-        )
-        let amazon = asset(
-            "amzn",
-            symbol: "AMZN",
-            name: "Amazon",
-            category: "Large cap",
-            unit: .currency,
-            price: 196.01,
-            change: -1.18,
-            changePercent: -0.60,
-            high: 198.32,
-            low: 194.74,
-            volume: "51M",
-            accent: Color.orange,
-            note: "Retail margin and cloud watch.",
-            sparkline: [198.2, 197.9, 197.4, 197.8, 197.1, 196.8, 196.4, 195.9, 196.2, 196.4, 196.0, 196.0]
-        )
-        let tesla = asset(
-            "tsla",
-            symbol: "TSLA",
-            name: "Tesla",
-            category: "Trending",
-            unit: .currency,
-            price: 234.22,
-            change: 6.40,
-            changePercent: 2.81,
-            high: 236.55,
-            low: 228.16,
-            volume: "132M",
-            accent: Color.red,
-            note: "High-beta momentum and headline risk.",
-            sparkline: [228.8, 229.4, 230.1, 229.7, 231.3, 232.0, 232.9, 233.4, 234.1, 234.7, 235.2, 234.2]
-        )
-        let smci = asset(
-            "smci",
-            symbol: "SMCI",
-            name: "Super Micro",
-            category: "Momentum",
-            unit: .currency,
-            price: 86.41,
-            change: 5.12,
-            changePercent: 6.30,
-            high: 87.05,
-            low: 80.92,
-            volume: "92M",
-            accent: Color.cyan,
-            note: "Fast-moving AI infrastructure trade.",
-            sparkline: [81.2, 81.8, 82.3, 83.0, 83.6, 84.5, 85.1, 85.8, 86.0, 86.8, 87.1, 86.4]
-        )
-        let palantir = asset(
-            "pltr",
-            symbol: "PLTR",
-            name: "Palantir",
-            category: "Momentum",
-            unit: .currency,
-            price: 31.98,
-            change: 1.06,
-            changePercent: 3.43,
-            high: 32.44,
-            low: 30.62,
-            volume: "76M",
-            accent: Color.green,
-            note: "Momentum name with consistent volume.",
-            sparkline: [30.6, 30.8, 31.1, 31.0, 31.4, 31.6, 31.8, 31.9, 32.0, 32.2, 32.1, 32.0]
-        )
-        let meta = asset(
-            "meta",
-            symbol: "META",
-            name: "Meta",
-            category: "Large cap",
-            unit: .currency,
-            price: 512.73,
-            change: 8.44,
-            changePercent: 1.67,
-            high: 514.18,
-            low: 505.02,
-            volume: "28M",
-            accent: Color.cyan,
-            note: "Ad spend and AI platform leverage.",
-            sparkline: [505.4, 506.8, 507.2, 507.9, 509.4, 509.1, 510.5, 511.0, 511.9, 512.8, 513.4, 512.7]
-        )
-
-        return MarketSnapshot(
-            updatedAt: Date(),
-            sourceBadge: "DEMO",
-            selectedAssetID: sp500.id,
-            assets: [
-                gold,
-                bitcoin,
-                sp500,
-                dowJones,
-                apple,
-                microsoft,
-                nvidia,
-                amazon,
-                tesla,
-                smci,
-                palantir,
-                meta
-            ]
-        )
+        return [
+            asset("sp500", symbol: "SPX", name: "S&P 500", category: "Index", unit: .points, accent: .cyan, note: "Broad market benchmark."),
+            asset("dow", symbol: "DJI", name: "Dow Jones", category: "Index", unit: .points, accent: .blue, note: "Heavyweight industrials and financials."),
+            asset("gold", symbol: "XAUUSD", name: "Gold", category: "Commodity", unit: .currency, accent: .orange, note: "Safe-haven bid and rate sensitivity."),
+            asset("bitcoin", symbol: "BTCUSD", name: "Bitcoin", category: "Crypto", unit: .currency, accent: .green, note: "Risk appetite and liquidity proxy."),
+            asset("aapl", symbol: "AAPL", name: "Apple", category: "Large cap", unit: .currency, accent: .blue, note: "Mega-cap software and hardware mix."),
+            asset("msft", symbol: "MSFT", name: "Microsoft", category: "Large cap", unit: .currency, accent: .green, note: "Defensive growth and AI exposure."),
+            asset("nvda", symbol: "NVDA", name: "NVIDIA", category: "Trending", unit: .currency, accent: .yellow, note: "AI semis continue to lead momentum."),
+            asset("tsla", symbol: "TSLA", name: "Tesla", category: "Trending", unit: .currency, accent: .red, note: "High-beta momentum and headline risk."),
+            asset("pltr", symbol: "PLTR", name: "Palantir", category: "Momentum", unit: .currency, accent: .green, note: "Momentum name with consistent volume."),
+            asset("tsm", symbol: "TSM", name: "TSMC", category: "Semiconductors", unit: .currency, accent: .cyan, note: "Foundry leader powering advanced chips."),
+            asset("googl", symbol: "GOOGL", name: "Google", category: "Large cap", unit: .currency, accent: .blue, note: "Search, cloud, and AI platform scale."),
+            asset("cost", symbol: "COST", name: "Costco", category: "Consumer", unit: .currency, accent: .orange, note: "Membership retail and resilient demand."),
+            asset("cat", symbol: "CAT", name: "Caterpillar", category: "Industrials", unit: .currency, accent: .yellow, note: "Global construction and mining equipment.")
+        ]
     }()
 }
 
@@ -676,7 +472,7 @@ struct NotchMarketsWidgetView: View {
                 .padding(.trailing, 4)
             },
             expanded: {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 8) {
                     if hasMarketData {
                         let selectedPerformance = selectedAsset.performance(for: selectedRange, displayCurrency: selectedDisplayCurrency)
                         let selectedMetrics = selectedAsset.rangeMetrics(for: selectedRange, displayCurrency: selectedDisplayCurrency)
@@ -749,8 +545,9 @@ struct NotchMarketsWidgetView: View {
                                 }
                             }
                             .padding(.horizontal, 1)
+                            .padding(.vertical, 4)
                         }
-                        .frame(height: 46)
+                        .frame(height: 54)
                     } else {
                         Text("No market data available")
                             .font(.system(size: 10, weight: .medium, design: .rounded))
@@ -802,7 +599,7 @@ struct NotchMarketsWidgetView: View {
     }
 
     private var trackedTickerAssets: [MarketAsset] {
-        let trackedIDs = ["sp500", "gold", "bitcoin", "dow", "aapl", "msft", "nvda", "tsla", "meta"]
+        let trackedIDs = ["sp500", "dow", "gold", "bitcoin", "aapl", "msft", "nvda", "tsla", "tsm", "googl", "cost", "cat"]
         return trackedIDs.compactMap { id in
             snapshot.asset(id: id)
         }

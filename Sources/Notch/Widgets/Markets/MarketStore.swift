@@ -39,7 +39,7 @@ final class MarketStore: ObservableObject {
         isLoading = true
         loadTask = Task { [weak self] in
             do {
-                let liveSnapshot = try await YahooFinanceMarketService.fetchSnapshot(from: .preview)
+                let liveSnapshot = try await YahooFinanceMarketService.fetchSnapshot(from: MarketSnapshot.marketUniverse)
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     withAnimation(.easeInOut(duration: 0.35)) {

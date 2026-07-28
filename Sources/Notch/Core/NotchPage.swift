@@ -15,7 +15,7 @@ enum NotchPage: String, CaseIterable, Identifiable {
         case .home: return "Home"
         case .weather: return "Weather"
         case .markets: return "Markets"
-        case .sounds: return "Now Playing"
+        case .sounds: return "Playing"
         case .tokenSpend: return "Token Spend"
         case .settings: return "Settings"
         }

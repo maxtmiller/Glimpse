@@ -862,6 +862,9 @@ private struct MarketCurrencySummary: View {
     let onNextCurrency: () -> Void
     let onNextRange: () -> Void
 
+    @State private var isCurrencyButtonHovered = false
+    @State private var isRangeButtonHovered = false
+
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
             Button(action: onNextCurrency) {
@@ -872,14 +875,17 @@ private struct MarketCurrencySummary: View {
                     .frame(width: 34, height: 22)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.white.opacity(0.12))
+                        .fill(isCurrencyButtonHovered ? Color.white.opacity(0.22) : Color.white.opacity(0.12))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                        .stroke(isCurrencyButtonHovered ? Color.white.opacity(0.42) : Color.white.opacity(0.14), lineWidth: 1)
                 )
+                .shadow(color: isCurrencyButtonHovered ? Color.cyan.opacity(0.16) : .black.opacity(0.22), radius: isCurrencyButtonHovered ? 5 : 3, y: 1)
+                .scaleEffect(isCurrencyButtonHovered ? 1.04 : 1)
             }
             .buttonStyle(InteractiveButtonStyle())
+            .onHover { isCurrencyButtonHovered = $0 }
             .help("Display currency: \(currency.title). Click to cycle.")
 
             Button(action: onNextRange) {
@@ -889,14 +895,17 @@ private struct MarketCurrencySummary: View {
                     .frame(width: 28, height: 22)
                     .background(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color.white.opacity(0.12))
+                            .fill(isRangeButtonHovered ? Color.white.opacity(0.22) : Color.white.opacity(0.12))
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                            .stroke(isRangeButtonHovered ? Color.white.opacity(0.42) : Color.white.opacity(0.14), lineWidth: 1)
                     )
+                    .shadow(color: isRangeButtonHovered ? Color.cyan.opacity(0.16) : .black.opacity(0.22), radius: isRangeButtonHovered ? 5 : 3, y: 1)
+                    .scaleEffect(isRangeButtonHovered ? 1.04 : 1)
             }
             .buttonStyle(InteractiveButtonStyle())
+            .onHover { isRangeButtonHovered = $0 }
             .help("Current range: \(selectedRange.title). Click to cycle.")
         }
     }

@@ -64,6 +64,7 @@ struct WeatherWidgetView: View {
 
     @State private var isLocationButtonHovered = false
     @State private var isUnitButtonHovered = false
+    @State private var isForecastRangeButtonHovered = false
     @State private var hoveredMetric: GraphMetric?
     @State private var isRetryButtonHovered = false
     @State private var isHomeButtonHovered = false
@@ -270,7 +271,9 @@ struct WeatherWidgetView: View {
     }
 
     private var forecastRangeButton: some View {
-        Button {
+        let isHovered = isForecastRangeButtonHovered
+
+        return Button {
             withAnimation(.easeInOut(duration: NotchMotion.hoverAnimationDuration)) {
                 forecastRange = forecastRange.next
             }
@@ -281,14 +284,17 @@ struct WeatherWidgetView: View {
                 .frame(width: 30, height: 26)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(Color.white.opacity(0.15))
+                        .fill(isHovered ? Color.white.opacity(0.22) : Color.white.opacity(0.15))
                 )
                 .overlay(
                     Capsule(style: .continuous)
-                        .stroke(Color.white.opacity(0.28), lineWidth: 1)
+                        .stroke(isHovered ? Color.white.opacity(0.42) : Color.white.opacity(0.28), lineWidth: 1)
                 )
+                .shadow(color: isHovered ? Color.cyan.opacity(0.16) : .black.opacity(0.22), radius: isHovered ? 5 : 3, y: 1)
+                .scaleEffect(isHovered ? 1.04 : 1)
         }
         .buttonStyle(InteractiveButtonStyle())
+        .onHover { isForecastRangeButtonHovered = $0 }
         .help("Forecast range: \(forecastRange.apiDays) day\(forecastRange.apiDays == 1 ? "" : "s"). Click to change.")
     }
 

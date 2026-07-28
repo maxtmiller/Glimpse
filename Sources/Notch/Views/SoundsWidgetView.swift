@@ -53,7 +53,7 @@ struct NotchSoundsWidgetView: View {
                 HStack(spacing: 10) {
                     NotchSummaryHeader(
                         icon: "waveform",
-                        title: "Now Playing",
+                        title: "Playing",
                         subtitle: "Computer audio",
                         accent: .purple,
                         showsSubtitle: isExpanded

@@ -136,7 +136,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return rect.insetBy(dx: -padding, dy: -padding)
 
         case .collapsed:
-            let shellHeight = max(layout.topBarHeight - 4, 56)
+            let shellHeight = max(layout.topBarHeight - 10, 50)
             let rect = NSRect(
                 x: frame.midX - layout.collapsedWidth / 2,
                 y: frame.maxY - shellHeight,

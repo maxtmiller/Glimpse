@@ -288,7 +288,7 @@ struct NotchWidgetChrome<Leading: View, Trailing: View, Expanded: View>: View {
     }
 
     private var collapsedShellHeight: CGFloat {
-        max(layout.topBarHeight - 4, 56)
+        max(layout.topBarHeight - 10, 50)
     }
 
     private func revealProgress(_ progress: CGFloat, start: CGFloat, end: CGFloat) -> CGFloat {

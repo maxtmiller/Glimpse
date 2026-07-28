@@ -39,7 +39,7 @@ That creates `.build/Notch.app` and opens it.
 
 If the app has not been granted location access yet, click the cloud icon to request access again. If you denied access previously, macOS will send you to System Settings so you can re-enable it there.
 
-The Now Playing widget reads Music and Spotify through macOS Apple Events. The first time you use it, macOS may ask you to allow Notch to control the selected media app. Use the bundled `.app` flow above so the permission description is available.
+The Playing widget reads Music and Spotify through macOS Apple Events. The first time you use it, macOS may ask you to allow Notch to control the selected media app. Use the bundled `.app` flow above so the permission description is available.
 
 ## Preview in Xcode
 

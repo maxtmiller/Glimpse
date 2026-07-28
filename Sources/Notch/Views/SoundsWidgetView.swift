@@ -10,6 +10,8 @@ struct NotchSoundsWidgetView: View {
     @StateObject private var mediaStore = SystemMediaStore()
     @State private var isHomeButtonHovered = false
     @State private var hoveredControl: String?
+    @State private var hoveredSpotifyTrackID: String?
+    @State private var spotifyListMode: SpotifyListMode = .recentlyPlayed
     @State private var playbackClock = Date()
 
     private let playbackTimer = Timer.publish(
@@ -91,7 +93,7 @@ struct NotchSoundsWidgetView: View {
                 }
             },
             expanded: {
-                VStack(spacing: 12) {
+                VStack(spacing: 9) {
                     HStack(spacing: 12) {
                         artwork
 
@@ -134,7 +136,7 @@ struct NotchSoundsWidgetView: View {
                         .monospacedDigit()
                     }
 
-                    HStack(spacing: 22) {
+                    HStack(spacing: 18) {
                         soundControlButton(symbol: "backward.fill", label: "Previous", action: mediaStore.skipPrevious)
                         soundControlButton(
                             symbol: media?.isPlaying == true ? "pause.fill" : "play.fill",
@@ -144,20 +146,134 @@ struct NotchSoundsWidgetView: View {
                         )
                         soundControlButton(symbol: "forward.fill", label: "Next", action: mediaStore.skipNext)
                     }
+
+                    if media?.appName == "Spotify" {
+                        spotifyHistoryStrip
+                            .offset(y: -10)
+                    }
                 }
-                .padding(.top, 8)
+                .padding(.top, 5)
                 .padding(.horizontal, 12)
-                .padding(.bottom, 12)
+                .padding(.bottom, 8)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         )
         .onAppear { mediaStore.start() }
     }
 
+    private var spotifyHistoryStrip: some View {
+        HStack(spacing: 8) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    spotifyListMode = spotifyListMode == .next ? .recentlyPlayed : .next
+                }
+            } label: {
+                Image(systemName: spotifyListMode == .next ? "clock.arrow.circlepath" : "text.line.first.and.arrowtriangle.forward")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.82))
+                    .frame(width: 25, height: 25)
+                    .background(Color.white.opacity(0.09), in: Circle())
+                    .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 1))
+            }
+            .buttonStyle(InteractiveButtonStyle())
+            .help(spotifyListMode == .next ? "Show recently played" : "Show next")
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(spotifyListMode.title)
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.48))
+                    .textCase(.uppercase)
+
+                if spotifyListMode == .next {
+                    Text("Spotify queue is available in the app")
+                        .font(.system(size: 10.5, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.68))
+                        .lineLimit(1)
+                } else if mediaStore.spotifyRecentlyPlayed.isEmpty {
+                    Text("Play a song to build your list")
+                        .font(.system(size: 10.5, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.68))
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 7) {
+                            ForEach(mediaStore.spotifyRecentlyPlayed) { track in
+                                Button {
+                                    mediaStore.playSpotifyTrack(track)
+                                } label: {
+                                    spotifyTrackCard(track, isHovered: hoveredSpotifyTrackID == track.id)
+                                }
+                                .buttonStyle(InteractiveButtonStyle())
+                                .onHover { hovering in
+                                    hoveredSpotifyTrackID = hovering ? track.id : nil
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 4)
+                    }
+                    .frame(height: 42)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.top, 1)
+        .transition(.opacity.combined(with: .move(edge: .bottom)))
+    }
+
+    private func spotifyTrackCard(_ track: SpotifyHistoryTrack, isHovered: Bool) -> some View {
+        HStack(spacing: 6) {
+            Group {
+                if let artwork = track.artwork {
+                    Image(nsImage: artwork)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Image(systemName: "music.note")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.72))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.green.opacity(0.28))
+                }
+            }
+            .frame(width: 28, height: 28)
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(track.title)
+                    .font(.system(size: 9.5, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.88))
+                    .lineLimit(1)
+                Text(track.artist)
+                    .font(.system(size: 8.5, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.46))
+                    .lineLimit(1)
+            }
+            .frame(width: 82, alignment: .leading)
+        }
+        .padding(.horizontal, 5)
+        .padding(.vertical, 3)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(isHovered ? Color.green.opacity(0.16) : Color.white.opacity(0.065))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(isHovered ? Color.green.opacity(0.72) : Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .scaleEffect(isHovered ? 1.035 : 1)
+        .shadow(color: isHovered ? Color.green.opacity(0.24) : .clear, radius: 6)
+        .animation(.easeOut(duration: 0.14), value: isHovered)
+        .help("\(track.title) · \(track.artist)")
+    }
+
     private var collapsedNowPlaying: some View {
         HStack(spacing: 12) {
             CollapsedProgressRing(progress: progressRatio, tint: progressTint)
-            CollapsedSourceIcon(appName: media?.appName, tint: progressTint)
+            CollapsedSourceIcon(
+                appName: media?.appName,
+                bundleIdentifier: media?.appBundleIdentifier,
+                tint: progressTint
+            )
         }
         .padding(.leading, 12)
         .padding(.trailing, 8)
@@ -239,15 +355,15 @@ struct NotchSoundsWidgetView: View {
                 if progressRatio > 0 {
                     Circle()
                         .fill(progressTint)
-                        .frame(width: 9, height: 9)
+                        .frame(width: 7, height: 7)
                         .overlay(Circle().stroke(Color.white.opacity(0.78), lineWidth: 1))
                         .shadow(color: progressTint.opacity(0.72), radius: 5)
-                        .offset(x: min(max(fillWidth - 4.5, 0), proxy.size.width - 9))
+                        .offset(x: min(max(fillWidth - 3.5, 0), proxy.size.width - 7))
                 }
             }
             .animation(.easeOut(duration: 0.25), value: progressRatio)
         }
-        .frame(height: 9)
+        .frame(height: 4)
         .accessibilityLabel("Track progress")
         .accessibilityValue("\(formatTime(livePosition)) of \(formatTime(media?.duration ?? 0))")
     }
@@ -312,7 +428,7 @@ struct NotchSoundsWidgetView: View {
                     .font(.system(size: emphasized ? 14 : 11, weight: .bold))
                     .foregroundStyle(.white.opacity(isHovered || emphasized ? 1 : 0.72))
             }
-            .frame(width: emphasized ? 38 : 32, height: emphasized ? 38 : 32)
+            .frame(width: emphasized ? 34 : 28, height: emphasized ? 34 : 28)
             .scaleEffect(isHovered ? 1.08 : 1)
             .shadow(color: isHovered ? progressTint.opacity(0.44) : .clear, radius: 9)
         }
@@ -321,6 +437,18 @@ struct NotchSoundsWidgetView: View {
             hoveredControl = hovering ? label : nil
         }
         .help(label)
+    }
+}
+
+private enum SpotifyListMode {
+    case next
+    case recentlyPlayed
+
+    var title: String {
+        switch self {
+        case .next: return "Next"
+        case .recentlyPlayed: return "Recently played"
+        }
     }
 }
 
@@ -390,6 +518,7 @@ private struct CollapsedProgressRing: View {
 
 private struct CollapsedSourceIcon: View {
     let appName: String?
+    let bundleIdentifier: String?
     let tint: Color
 
     var body: some View {
@@ -409,6 +538,26 @@ private struct CollapsedSourceIcon: View {
     }
 
     private var applicationIcon: NSImage? {
+        let applicationBundleIdentifier: String?
+        if let bundleIdentifier {
+            if bundleIdentifier.hasPrefix("com.google.Chrome") {
+                applicationBundleIdentifier = "com.google.Chrome"
+            } else if bundleIdentifier.hasPrefix("com.apple.Safari") {
+                applicationBundleIdentifier = "com.apple.Safari"
+            } else if bundleIdentifier.hasPrefix("org.mozilla.firefox") {
+                applicationBundleIdentifier = "org.mozilla.firefox"
+            } else {
+                applicationBundleIdentifier = bundleIdentifier
+            }
+        } else {
+            applicationBundleIdentifier = nil
+        }
+
+        if let applicationBundleIdentifier,
+           let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: applicationBundleIdentifier) {
+            return NSWorkspace.shared.icon(forFile: url.path)
+        }
+
         guard let appName else { return nil }
 
         let paths: [String]
@@ -417,6 +566,12 @@ private struct CollapsedSourceIcon: View {
             paths = ["/Applications/Spotify.app", "\(NSHomeDirectory())/Applications/Spotify.app"]
         case "Apple Music":
             paths = ["/System/Applications/Music.app", "/Applications/Music.app"]
+        case "Google Chrome":
+            paths = ["/Applications/Google Chrome.app", "\(NSHomeDirectory())/Applications/Google Chrome.app"]
+        case "Safari":
+            paths = ["/Applications/Safari.app", "/System/Applications/Safari.app"]
+        case "Firefox":
+            paths = ["/Applications/Firefox.app", "\(NSHomeDirectory())/Applications/Firefox.app"]
         default:
             paths = []
         }

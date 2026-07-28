@@ -48,17 +48,11 @@ struct NotchView: View {
             height: layout.topBarHeight + layout.expandedBodyHeight,
             alignment: .top
         )
-        .ignoresSafeArea(.all, edges: .top) // Locks the view to the top edge of the screen frame
-        .onReceive(NotificationCenter.default.publisher(for: .notchMouseExited)) { _ in
-            // A Space transition can prevent the normal tracking area exit
-            // from arriving. Bypass the expansion animation's hover
-            // suppression window when AppKit reports the screen-space exit.
-            suppressHoverUntil = nil
-            handleHoverChange(false)
-        }
+        .ignoresSafeArea(.all, edges: .top) 
         .onChange(of: forecastRange) { newRange in
             onForecastRangeChange(newRange)
         }
+        // REMOVED: .onReceive(.notchMouseExited) to prevent blind force-collapsing
     }
 
     private var isExpanded: Bool {
@@ -207,11 +201,12 @@ struct NotchView: View {
     private func handleHoverChange(_ hovering: Bool) {
         guard displayState != .hidden else { return }
 
-        if let suppressHoverUntil, suppressHoverUntil > Date() {
-            return
-        }
-
         if hovering {
+            // Only suppress NEW expansions during animation windows
+            if let suppressHoverUntil, suppressHoverUntil > Date() {
+                return
+            }
+
             isHoveringExpandedShell = true
             pendingCollapseToken = UUID()
             let expandToken = UUID()
@@ -224,16 +219,23 @@ struct NotchView: View {
                 setDisplayState(.expanded)
             }
         } else {
+            // ALWAYS process exits, bypassing suppressHoverUntil!
             isHoveringExpandedShell = false
+            
+            // Kill any queued expansion immediately
             pendingExpandToken = UUID()
-            let collapseToken = UUID()
-            pendingCollapseToken = collapseToken
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.09) { [collapseToken] in
-                guard pendingCollapseToken == collapseToken else { return }
-                guard !isHoveringExpandedShell else { return }
-                guard displayState != .hidden else { return }
-                setDisplayState(.collapsed)
+            // If we are currently expanded or in the middle of expanding, schedule collapse
+            if displayState == .expanded {
+                let collapseToken = UUID()
+                pendingCollapseToken = collapseToken
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [collapseToken] in
+                    guard pendingCollapseToken == collapseToken else { return }
+                    guard !isHoveringExpandedShell else { return }
+                    guard displayState != .hidden else { return }
+                    setDisplayState(.collapsed)
+                }
             }
         }
     }
@@ -255,8 +257,12 @@ struct NotchView: View {
         if state != .collapsed {
             pendingCollapseToken = UUID()
         }
+        // Manage hover suppression windows based on state
         if state == .expanded {
             suppressHoverUntil = Date().addingTimeInterval(NotchMotion.hoverAnimationDuration + 0.08)
+        } else {
+            // Clearing suppression on collapse/hidden allows fast re-entries to work smoothly
+            suppressHoverUntil = nil
         }
         if state == .hidden {
             suppressHoverUntil = nil
@@ -525,15 +531,13 @@ private final class HoverTrackingNSView: NSView {
     }
 
     override func mouseEntered(with event: NSEvent) {
-        guard !isHovering else { return }
-        isHovering = true
-        onHoverChanged?(true)
+        // Defer to coordinate check to prevent tracking area flutters
+        DispatchQueue.main.async { [weak self] in self?.syncHoverState() }
     }
 
     override func mouseExited(with event: NSEvent) {
-        guard isHovering else { return }
-        isHovering = false
-        onHoverChanged?(false)
+        // Defer to coordinate check to prevent tracking area flutters
+        DispatchQueue.main.async { [weak self] in self?.syncHoverState() }
     }
 
     func syncHoverState() {
@@ -541,7 +545,11 @@ private final class HoverTrackingNSView: NSView {
 
         let windowPoint = window.convertPoint(fromScreen: NSEvent.mouseLocation)
         let localPoint = convert(windowPoint, from: nil)
-        let hovering = bounds.contains(localPoint)
+
+        // Add 5px padding to prevent edge jitter where the cursor is
+        // physically jammed against the screen limits.
+        let safeBounds = bounds.insetBy(dx: -5, dy: -5)
+        let hovering = safeBounds.contains(localPoint)
 
         guard hovering != isHovering else { return }
 
@@ -550,6 +558,15 @@ private final class HoverTrackingNSView: NSView {
     }
 
     private func resetHoverState() {
+        guard let window else { return }
+        
+        let windowPoint = window.convertPoint(fromScreen: NSEvent.mouseLocation)
+        let localPoint = convert(windowPoint, from: nil)
+        let safeBounds = bounds.insetBy(dx: -5, dy: -5)
+
+        // Double-check the mouse is actually outside the padded bounds 
+        // before forcing a collapse (ignoring false AppKit exits)
+        guard !safeBounds.contains(localPoint) else { return }
         guard isHovering else { return }
 
         isHovering = false

@@ -144,7 +144,7 @@ struct WeatherWidgetView: View {
                 .padding(.leading, 4)
             },
             trailing: {
-                HStack(spacing: 10) {
+                HStack(spacing: isExpanded ? 10 : 4) {
                     if isExpanded {
                         NotchNavigationButton(
                             systemName: "gearshape.fill",
@@ -161,12 +161,16 @@ struct WeatherWidgetView: View {
                     }
 
                     temperatureChip
-                    unitToggleButton
+                    if !isExpanded {
+                        collapsedHumidity
+                    }
                     if isExpanded {
+                        unitToggleButton
                         forecastRangeButton
                     }
                 }
                 .padding(.trailing, 4)
+                .offset(x: isExpanded ? 0 : -9)
             },
             expanded: {
                 notchWeatherExpandedView
@@ -240,6 +244,22 @@ struct WeatherWidgetView: View {
         .padding(.horizontal, 9)
         .padding(.vertical, 5)
         .background(.white.opacity(0.08), in: Capsule())
+    }
+
+    private var collapsedHumidity: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "drop.fill")
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(Color.cyan.opacity(0.82))
+
+            Text(displayMetricValue(snapshot.humidity, suffix: "%"))
+                .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.86))
+                .contentTransition(.numericText())
+        }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 5)
+        .background(.white.opacity(0.06), in: Capsule())
     }
 
     private var unitToggleButton: some View {

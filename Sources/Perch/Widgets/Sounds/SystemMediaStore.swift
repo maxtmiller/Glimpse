@@ -82,7 +82,7 @@ final class SystemMediaStore: ObservableObject {
         var error: NSDictionary?
         _ = NSAppleScript(source: script)?.executeAndReturnError(&error)
         if let error {
-            print("Notch Spotify track command failed: \(error)")
+            print("Perch Spotify track command failed: \(error)")
         }
         refreshAfterCommand()
     }
@@ -381,7 +381,7 @@ final class SystemMediaStore: ObservableObject {
         var error: NSDictionary?
         _ = NSAppleScript(source: script)?.executeAndReturnError(&error)
         if let error {
-            print("Notch media command failed for \(player.displayName): \(error)")
+            print("Perch media command failed for \(player.displayName): \(error)")
         }
     }
 

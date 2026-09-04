@@ -1,10 +1,10 @@
 import SwiftUI
 
-struct NotchMeetingsWidgetView: View {
+struct PerchMeetingsWidgetView: View {
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
-    @Binding var selectedPage: NotchPage
+    @Binding var selectedPage: PerchPage
 
     @StateObject private var controls = MeetingControlsStore()
     @State private var hoveredControl: String?
@@ -12,13 +12,13 @@ struct NotchMeetingsWidgetView: View {
     @State private var isSettingsButtonHovered = false
 
     var body: some View {
-        NotchWidgetChrome(
+        PerchWidgetChrome(
             layout: layout,
             isExpanded: isExpanded,
             presentationProgress: presentationProgress,
             leading: {
                 HStack(spacing: 10) {
-                    NotchSummaryHeader(
+                    PerchSummaryHeader(
                         icon: "video.fill",
                         title: "Meetings",
                         subtitle: "Mic, camera & audio",
@@ -28,12 +28,12 @@ struct NotchMeetingsWidgetView: View {
 
                     if isExpanded {
                         Spacer(minLength: 0)
-                        NotchNavigationButton(
+                        PerchNavigationButton(
                             systemName: "house.fill",
                             title: "Home",
                             isHovered: $isHomeButtonHovered
                         ) {
-                            withAnimation(NotchMotion.pageTransitionAnimation) {
+                            withAnimation(PerchMotion.pageTransitionAnimation) {
                                 selectedPage = .home
                             }
                         }
@@ -44,12 +44,12 @@ struct NotchMeetingsWidgetView: View {
             trailing: {
                 HStack(spacing: isExpanded ? 10 : 5) {
                     if isExpanded {
-                        NotchNavigationButton(
+                        PerchNavigationButton(
                             systemName: "gearshape.fill",
                             title: "Settings",
                             isHovered: $isSettingsButtonHovered
                         ) {
-                            withAnimation(NotchMotion.pageTransitionAnimation) {
+                            withAnimation(PerchMotion.pageTransitionAnimation) {
                                 selectedPage = .settings
                             }
                         }
@@ -58,13 +58,13 @@ struct NotchMeetingsWidgetView: View {
                         Spacer(minLength: 0)
                     }
 
-                    NotchSummaryBadge(text: statusText)
+                    PerchSummaryBadge(text: statusText)
                 }
                 .padding(.trailing, 4)
             },
             expanded: {
                 VStack(alignment: .leading, spacing: 11) {
-                    NotchHeader(
+                    PerchHeader(
                         title: "Meeting controls",
                         subtitle: "Mic, camera & audio at a glance"
                     )

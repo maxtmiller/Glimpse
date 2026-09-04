@@ -2,21 +2,21 @@ import AppKit
 import ServiceManagement
 import SwiftUI
 
-struct NotchHomeWidgetView: View {
+struct PerchHomeWidgetView: View {
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
-    @Binding var selectedPage: NotchPage
+    @Binding var selectedPage: PerchPage
     @StateObject private var batteryMonitor = BatteryMonitor()
     @State private var isSettingsButtonHovered = false
 
     var body: some View {
-        NotchWidgetChrome(
+        PerchWidgetChrome(
             layout: layout,
             isExpanded: isExpanded,
             presentationProgress: presentationProgress,
             leading: {
-                NotchSummaryHeader(
+                PerchSummaryHeader(
                     icon: "square.grid.2x2.fill",
                     title: "Home",
                     subtitle: "Widgets",
@@ -27,12 +27,12 @@ struct NotchHomeWidgetView: View {
             trailing: {
                 HStack(spacing: 10) {
                     if isExpanded {
-                        NotchNavigationButton(
+                        PerchNavigationButton(
                             systemName: "gearshape.fill",
                             title: "Settings",
                             isHovered: $isSettingsButtonHovered
                         ) {
-                            withAnimation(NotchMotion.pageTransitionAnimation) {
+                            withAnimation(PerchMotion.pageTransitionAnimation) {
                                 selectedPage = .settings
                             }
                         }
@@ -48,14 +48,14 @@ struct NotchHomeWidgetView: View {
                 expanded: {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(alignment: .bottom) {
-                        NotchHeader(
+                        PerchHeader(
                             title: "Your widgets",
                             subtitle: "Choose an app to take over the panel."
                         )
 
                         Spacer(minLength: 0)
 
-                        Text("\(NotchPage.widgetPages.count) APPS")
+                        Text("\(PerchPage.widgetPages.count) APPS")
                             .font(.system(size: 9, weight: .bold, design: .rounded))
                             .foregroundStyle(.white.opacity(0.42))
                             .tracking(0.8)
@@ -68,9 +68,9 @@ struct NotchHomeWidgetView: View {
                         ],
                         spacing: 10
                     ) {
-                        ForEach(NotchPage.widgetPages) { page in
+                        ForEach(PerchPage.widgetPages) { page in
                             HomeAppTile(page: page, isSelected: selectedPage == page) {
-                                withAnimation(NotchMotion.pageTransitionAnimation) {
+                                withAnimation(PerchMotion.pageTransitionAnimation) {
                                     selectedPage = page
                                 }
                             }
@@ -87,7 +87,7 @@ struct NotchHomeWidgetView: View {
 }
 
 private struct HomeAppTile: View {
-    let page: NotchPage
+    let page: PerchPage
     let isSelected: Bool
     let action: () -> Void
     @State private var isHovered = false
@@ -207,24 +207,24 @@ private struct BatteryIndicator: View {
     }
 }
 
-struct NotchPlaceholderWidgetView: View {
-    let page: NotchPage
+struct PerchPlaceholderWidgetView: View {
+    let page: PerchPage
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
-    @Binding var selectedPage: NotchPage
+    @Binding var selectedPage: PerchPage
     let details: [String]
     @State private var isHomeButtonHovered = false
     @State private var isSettingsButtonHovered = false
 
     var body: some View {
-        NotchWidgetChrome(
+        PerchWidgetChrome(
             layout: layout,
             isExpanded: isExpanded,
             presentationProgress: presentationProgress,
             leading: {
                 HStack(spacing: 10) {
-                    NotchSummaryHeader(
+                    PerchSummaryHeader(
                         icon: page.symbol,
                         title: page.title,
                         subtitle: page.subtitle,
@@ -235,12 +235,12 @@ struct NotchPlaceholderWidgetView: View {
                     if isExpanded {
                         Spacer(minLength: 0)
 
-                        NotchNavigationButton(
+                        PerchNavigationButton(
                             systemName: "house.fill",
                             title: "Home",
                             isHovered: $isHomeButtonHovered
                         ) {
-                            withAnimation(NotchMotion.pageTransitionAnimation) {
+                            withAnimation(PerchMotion.pageTransitionAnimation) {
                                 selectedPage = .home
                             }
                         }
@@ -251,12 +251,12 @@ struct NotchPlaceholderWidgetView: View {
             trailing: {
                 HStack(spacing: 10) {
                     if isExpanded {
-                        NotchNavigationButton(
+                        PerchNavigationButton(
                             systemName: "gearshape.fill",
                             title: "Settings",
                             isHovered: $isSettingsButtonHovered
                         ) {
-                            withAnimation(NotchMotion.pageTransitionAnimation) {
+                            withAnimation(PerchMotion.pageTransitionAnimation) {
                                 selectedPage = .settings
                             }
                         }
@@ -266,15 +266,15 @@ struct NotchPlaceholderWidgetView: View {
                     }
 
                     HStack(spacing: 5) {
-                        NotchSummaryBadge(text: badgeOne)
-                        NotchSummaryBadge(text: badgeTwo)
+                        PerchSummaryBadge(text: badgeOne)
+                        PerchSummaryBadge(text: badgeTwo)
                     }
                 }
                 .padding(.trailing, 4)
             },
             expanded: {
                 VStack(alignment: .leading, spacing: 10) {
-                    NotchHeader(title: page.title, subtitle: page.subtitle)
+                    PerchHeader(title: page.title, subtitle: page.subtitle)
 
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(details, id: \.self) { detail in
@@ -316,29 +316,29 @@ struct NotchPlaceholderWidgetView: View {
 
 }
 
-struct NotchSettingsWidgetView: View {
+struct PerchSettingsWidgetView: View {
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
-    @Binding var selectedPage: NotchPage
-    let previousPage: NotchPage
+    @Binding var selectedPage: PerchPage
+    let previousPage: PerchPage
     @State private var isHomeButtonHovered = false
     @State private var isBackButtonHovered = false
-    @AppStorage("notch.defaultPage") private var defaultPageRawValue = NotchPage.sounds.rawValue
-    @AppStorage("notch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
-    @AppStorage("notch.expandBehavior") private var expandBehaviorRawValue = NotchExpandBehavior.hover.rawValue
+    @AppStorage("perch.defaultPage") private var defaultPageRawValue = PerchPage.sounds.rawValue
+    @AppStorage("perch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
+    @AppStorage("perch.expandBehavior") private var expandBehaviorRawValue = PerchExpandBehavior.hover.rawValue
     @State private var launchesAtLogin = false
     @State private var showingResetConfirmation = false
     @State private var settingsMessage: String?
 
     var body: some View {
-        NotchWidgetChrome(
+        PerchWidgetChrome(
             layout: layout,
             isExpanded: isExpanded,
             presentationProgress: presentationProgress,
             leading: {
                 HStack(spacing: 10) {
-                    NotchSummaryHeader(
+                    PerchSummaryHeader(
                         icon: "gearshape.fill",
                         title: "Settings",
                         subtitle: "Prefs",
@@ -349,12 +349,12 @@ struct NotchSettingsWidgetView: View {
                     if isExpanded {
                         Spacer(minLength: 0)
 
-                        NotchNavigationButton(
+                        PerchNavigationButton(
                             systemName: "house.fill",
                             title: "Home",
                             isHovered: $isHomeButtonHovered
                         ) {
-                            withAnimation(NotchMotion.pageTransitionAnimation) {
+                            withAnimation(PerchMotion.pageTransitionAnimation) {
                                 selectedPage = .home
                             }
                         }
@@ -365,12 +365,12 @@ struct NotchSettingsWidgetView: View {
             trailing: {
                 HStack(spacing: 10) {
                     if isExpanded {
-                        NotchNavigationButton(
+                        PerchNavigationButton(
                             systemName: "arrow.left",
                             title: "Back",
                             isHovered: $isBackButtonHovered
                         ) {
-                            withAnimation(NotchMotion.pageTransitionAnimation) {
+                            withAnimation(PerchMotion.pageTransitionAnimation) {
                                 selectedPage = previousPage
                             }
                         }
@@ -380,8 +380,8 @@ struct NotchSettingsWidgetView: View {
                     }
 
                     HStack(spacing: 5) {
-                        NotchSummaryBadge(text: selectedExpandBehavior.title)
-                        NotchSummaryBadge(text: "v\(appVersion)")
+                        PerchSummaryBadge(text: selectedExpandBehavior.title)
+                        PerchSummaryBadge(text: "v\(appVersion)")
                     }
                 }
                 .padding(.trailing, 4)
@@ -398,14 +398,14 @@ struct NotchSettingsWidgetView: View {
                         ) {
                             settingsToggleRow(
                                 title: "Launch at login",
-                                detail: "Open Notch when you sign in",
+                                detail: "Open Perch when you sign in",
                                 isOn: $launchesAtLogin,
                                 action: setLaunchAtLogin
                             )
 
-                            settingsPickerRow(title: "Default widget", detail: "Shown when Notch opens") {
+                            settingsPickerRow(title: "Default widget", detail: "Shown when Perch opens") {
                                 Picker("Default widget", selection: $defaultPageRawValue) {
-                                    ForEach(NotchPage.widgetPages) { page in
+                                    ForEach(PerchPage.widgetPages) { page in
                                         Text(page.title).tag(page.rawValue)
                                     }
                                 }
@@ -425,7 +425,7 @@ struct NotchSettingsWidgetView: View {
 
                             settingsPickerRow(title: "Expand behavior", detail: "Hover or click to open") {
                                 Picker("Expand behavior", selection: $expandBehaviorRawValue) {
-                                    ForEach(NotchExpandBehavior.allCases) { behavior in
+                                    ForEach(PerchExpandBehavior.allCases) { behavior in
                                         Text(behavior.title).tag(behavior.rawValue)
                                     }
                                 }
@@ -474,8 +474,8 @@ struct NotchSettingsWidgetView: View {
         }
     }
 
-    private var selectedExpandBehavior: NotchExpandBehavior {
-        NotchExpandBehavior(rawValue: expandBehaviorRawValue) ?? .hover
+    private var selectedExpandBehavior: PerchExpandBehavior {
+        PerchExpandBehavior(rawValue: expandBehaviorRawValue) ?? .hover
     }
 
     private var usesGlassAppearance: Bool {
@@ -492,11 +492,11 @@ struct NotchSettingsWidgetView: View {
     }
 
     private var diagnosticsText: String {
-        "Notch \(appVersion)\nmacOS \(ProcessInfo.processInfo.operatingSystemVersionString)\nDefault widget: \(defaultPage.title)\nLaunch at login: \(launchItemStatus)"
+        "Perch \(appVersion)\nmacOS \(ProcessInfo.processInfo.operatingSystemVersionString)\nDefault widget: \(defaultPage.title)\nLaunch at login: \(launchItemStatus)"
     }
 
-    private var defaultPage: NotchPage {
-        NotchPage(rawValue: defaultPageRawValue).flatMap { NotchPage.widgetPages.contains($0) ? $0 : nil } ?? .sounds
+    private var defaultPage: PerchPage {
+        PerchPage(rawValue: defaultPageRawValue).flatMap { PerchPage.widgetPages.contains($0) ? $0 : nil } ?? .sounds
     }
 
     private var launchItemStatus: String {
@@ -524,9 +524,9 @@ struct NotchSettingsWidgetView: View {
     }
 
     private func resetSettings() {
-        defaultPageRawValue = NotchPage.sounds.rawValue
+        defaultPageRawValue = PerchPage.sounds.rawValue
         panelAppearanceRawValue = PanelAppearance.solid.rawValue
-        expandBehaviorRawValue = NotchExpandBehavior.hover.rawValue
+        expandBehaviorRawValue = PerchExpandBehavior.hover.rawValue
         setLaunchAtLogin(false)
     }
 
@@ -546,8 +546,8 @@ struct NotchSettingsWidgetView: View {
             ))
         }
 
-        // SwiftUI alerts attach to the notch panel. A native modal alert is
-        // explicitly centered on the main display instead of appearing over the notch.
+        // SwiftUI alerts attach to the perch panel. A native modal alert is
+        // explicitly centered on the main display instead of appearing over the perch.
         NSApp.activate(ignoringOtherApps: true)
         alert.runModal()
     }
@@ -653,7 +653,7 @@ enum PanelAppearance: String, CaseIterable, Identifiable {
     }
 }
 
-enum NotchExpandBehavior: String, CaseIterable, Identifiable {
+enum PerchExpandBehavior: String, CaseIterable, Identifiable {
     case hover
     case click
 

@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-struct NotchView: View {
+struct PerchView: View {
     private enum DisplayState {
         case hidden
         case collapsed
@@ -15,11 +15,11 @@ struct NotchView: View {
     let onLocationRequest: () -> Void
 
     @State private var displayState: DisplayState = .hidden
-    @State private var selectedPage: NotchPage = .sounds
-    @State private var lastNonSettingsPage: NotchPage = .sounds
-    @AppStorage("notch.defaultPage") private var defaultPageRawValue = NotchPage.sounds.rawValue
-    @AppStorage("notch.expandBehavior") private var expandBehaviorRawValue = NotchExpandBehavior.hover.rawValue
-    @AppStorage("notch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
+    @State private var selectedPage: PerchPage = .sounds
+    @State private var lastNonSettingsPage: PerchPage = .sounds
+    @AppStorage("perch.defaultPage") private var defaultPageRawValue = PerchPage.sounds.rawValue
+    @AppStorage("perch.expandBehavior") private var expandBehaviorRawValue = PerchExpandBehavior.hover.rawValue
+    @AppStorage("perch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
     @State private var temperatureUnit: TemperatureUnit = .fahrenheit
     @State private var forecastRange: WeatherForecastRange = .oneDay
     @State private var selectedGraphMetric: GraphMetric?
@@ -56,7 +56,7 @@ struct NotchView: View {
         .onChange(of: forecastRange) { newRange in
             onForecastRangeChange(newRange)
         }
-        // REMOVED: .onReceive(.notchMouseExited) to prevent blind force-collapsing
+        // REMOVED: .onReceive(.perchMouseExited) to prevent blind force-collapsing
     }
 
     private var isExpanded: Bool {
@@ -76,9 +76,9 @@ struct NotchView: View {
             selectedWidgetView
                 .frame(width: shellWidth, height: shellHeight, alignment: .top)
 
-            // Keep the top notch toggle above the widget's transparent
+            // Keep the top perch toggle above the widget's transparent
             // header/center area so it remains clickable while expanded.
-            notchToggleButton
+            perchToggleButton
 
         }
         .frame(width: shellWidth, height: shellHeight, alignment: .top)
@@ -89,7 +89,7 @@ struct NotchView: View {
         ZStack {
             switch selectedPage {
             case .home:
-                NotchHomeWidgetView(
+                PerchHomeWidgetView(
                     layout: layout,
                     isExpanded: isExpanded,
                     presentationProgress: presentationProgress,
@@ -110,7 +110,7 @@ struct NotchView: View {
                 )
                 .transition(pageSwapTransition)
             case .markets:
-                NotchMarketsWidgetView(
+                PerchMarketsWidgetView(
                     layout: layout,
                     isExpanded: isExpanded,
                     presentationProgress: presentationProgress,
@@ -118,7 +118,7 @@ struct NotchView: View {
                 )
                 .transition(pageSwapTransition)
             case .sounds:
-                NotchSoundsWidgetView(
+                PerchSoundsWidgetView(
                     layout: layout,
                     isExpanded: isExpanded,
                     presentationProgress: presentationProgress,
@@ -126,7 +126,7 @@ struct NotchView: View {
                 )
                 .transition(pageSwapTransition)
             case .meetings:
-                NotchMeetingsWidgetView(
+                PerchMeetingsWidgetView(
                     layout: layout,
                     isExpanded: isExpanded,
                     presentationProgress: presentationProgress,
@@ -134,7 +134,7 @@ struct NotchView: View {
                 )
                 .transition(pageSwapTransition)
             case .tokenSpend:
-                NotchPlaceholderWidgetView(
+                PerchPlaceholderWidgetView(
                     page: .tokenSpend,
                     layout: layout,
                     isExpanded: isExpanded,
@@ -148,7 +148,7 @@ struct NotchView: View {
                 )
                 .transition(pageSwapTransition)
             case .settings:
-                NotchSettingsWidgetView(
+                PerchSettingsWidgetView(
                     layout: layout,
                     isExpanded: isExpanded,
                     presentationProgress: presentationProgress,
@@ -158,34 +158,34 @@ struct NotchView: View {
                 .transition(pageSwapTransition)
             }
         }
-        .animation(NotchMotion.pageTransitionAnimation, value: selectedPage)
+        .animation(PerchMotion.pageTransitionAnimation, value: selectedPage)
         .onChange(of: selectedPage) { newPage in
             if newPage != .settings {
                 lastNonSettingsPage = newPage
             }
         }
         .onAppear {
-            if let configuredPage = NotchPage(rawValue: defaultPageRawValue),
-               NotchPage.widgetPages.contains(configuredPage) {
+            if let configuredPage = PerchPage(rawValue: defaultPageRawValue),
+               PerchPage.widgetPages.contains(configuredPage) {
                 selectedPage = configuredPage
                 lastNonSettingsPage = configuredPage
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .notchDismissRequested)) { _ in
-            guard expandBehaviorRawValue == NotchExpandBehavior.click.rawValue else { return }
+        .onReceive(NotificationCenter.default.publisher(for: .perchDismissRequested)) { _ in
+            guard expandBehaviorRawValue == PerchExpandBehavior.click.rawValue else { return }
             setDisplayState(.collapsed)
         }
     }
 
     private var hiddenToggleLayer: some View {
-        notchToggleButton
+        perchToggleButton
             .allowsHitTesting(displayState == .hidden)
     }
 
     private var collapsedClickTarget: some View {
         Group {
             if displayState == .collapsed,
-               expandBehaviorRawValue == NotchExpandBehavior.click.rawValue {
+               expandBehaviorRawValue == PerchExpandBehavior.click.rawValue {
                 Button(action: toggleCollapsedVisibility) {
                     Color.clear
                         .frame(width: layout.collapsedWidth, height: collapsedShellHeight)
@@ -196,7 +196,7 @@ struct NotchView: View {
         }
     }
 
-    private var notchToggleButton: some View {
+    private var perchToggleButton: some View {
         Button(action: toggleCollapsedVisibility) {
             UnevenRoundedRectangle(
                 cornerRadii: .init(
@@ -210,7 +210,7 @@ struct NotchView: View {
             .fill(.black.opacity(0.16))
             // .padding(.horizontal, 1) // 1px visual padding on sides
             // .padding(.bottom, 1)     // 1px visual padding on bottom
-            .frame(width: NotchGeometry.width, height: NotchGeometry.height, alignment: .top)
+            .frame(width: PerchGeometry.width, height: PerchGeometry.height, alignment: .top)
             .shadow(color: .black.opacity(0.22), radius: 3, y: 1)
         }
         .buttonStyle(.plain)
@@ -245,7 +245,7 @@ struct NotchView: View {
 
     private func handleHoverChange(_ hovering: Bool) {
         guard displayState != .hidden else { return }
-        guard expandBehaviorRawValue == NotchExpandBehavior.hover.rawValue else { return }
+        guard expandBehaviorRawValue == PerchExpandBehavior.hover.rawValue else { return }
 
         if hovering {
             // Only suppress NEW expansions during animation windows
@@ -289,11 +289,11 @@ struct NotchView: View {
     private func toggleCollapsedVisibility() {
         switch displayState {
         case .hidden:
-            // A click on the notch is an intentional launch gesture: reveal the
+            // A click on the perch is an intentional launch gesture: reveal the
             // selected widget directly into its full canvas.
             setDisplayState(.expanded)
         case .collapsed:
-            if expandBehaviorRawValue == NotchExpandBehavior.click.rawValue {
+            if expandBehaviorRawValue == PerchExpandBehavior.click.rawValue {
                 setDisplayState(.expanded)
             } else {
                 setDisplayState(.hidden)
@@ -311,7 +311,7 @@ struct NotchView: View {
         }
         // Manage hover suppression windows based on state
         if state == .expanded {
-            suppressHoverUntil = Date().addingTimeInterval(NotchMotion.hoverAnimationDuration + 0.08)
+            suppressHoverUntil = Date().addingTimeInterval(PerchMotion.hoverAnimationDuration + 0.08)
         } else {
             // Clearing suppression on collapse/hidden allows fast re-entries to work smoothly
             suppressHoverUntil = nil
@@ -323,26 +323,26 @@ struct NotchView: View {
 
         if state == .hidden {
             let resetToken = pendingHiddenResetToken
-            withAnimation(NotchMotion.presentationAnimation) {
+            withAnimation(PerchMotion.presentationAnimation) {
                 presentationProgress = 0
             }
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + NotchMotion.hoverAnimationDuration) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + PerchMotion.hoverAnimationDuration) {
                 guard pendingHiddenResetToken == resetToken else { return }
                 renderedState = .hidden
             }
         } else {
-            withAnimation(NotchMotion.presentationAnimation) {
+            withAnimation(PerchMotion.presentationAnimation) {
                 renderedState = state
                 presentationProgress = 1
             }
         }
 
-        withAnimation(NotchMotion.presentationAnimation) {
+        withAnimation(PerchMotion.presentationAnimation) {
             displayState = state
         }
         NotificationCenter.default.post(
-            name: .notchPresentationStateDidChange,
+            name: .perchPresentationStateDidChange,
             object: nil,
             userInfo: ["state": presentationStateName(for: state)]
         )
@@ -363,10 +363,10 @@ struct NotchView: View {
     private var islandBackground: some View {
         IslandShellShape(
             bottomCornerRadius: 22,
-            notchWidth: NotchGeometry.width,
-            notchDepth: NotchGeometry.height,
-            notchTopCornerRadius: NotchGeometry.topCornerRadius,
-            notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
+            perchWidth: PerchGeometry.width,
+            perchDepth: PerchGeometry.height,
+            perchTopCornerRadius: PerchGeometry.topCornerRadius,
+            perchBottomCornerRadius: PerchGeometry.lowerCornerRadius
         )
         .fill(panelAppearance.baseColor, style: FillStyle(eoFill: true))
         .overlay {
@@ -374,29 +374,29 @@ struct NotchView: View {
                 if panelAppearance == .glass {
                     IslandShellShape(
                         bottomCornerRadius: 22,
-                        notchWidth: NotchGeometry.width,
-                        notchDepth: NotchGeometry.height,
-                        notchTopCornerRadius: NotchGeometry.topCornerRadius,
-                        notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
+                        perchWidth: PerchGeometry.width,
+                        perchDepth: PerchGeometry.height,
+                        perchTopCornerRadius: PerchGeometry.topCornerRadius,
+                        perchBottomCornerRadius: PerchGeometry.lowerCornerRadius
                     )
                     .fill(.thinMaterial, style: FillStyle(eoFill: true))
                 } else if panelAppearance == .balanced {
                     IslandShellShape(
                         bottomCornerRadius: 22,
-                        notchWidth: NotchGeometry.width,
-                        notchDepth: NotchGeometry.height,
-                        notchTopCornerRadius: NotchGeometry.topCornerRadius,
-                        notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
+                        perchWidth: PerchGeometry.width,
+                        perchDepth: PerchGeometry.height,
+                        perchTopCornerRadius: PerchGeometry.topCornerRadius,
+                        perchBottomCornerRadius: PerchGeometry.lowerCornerRadius
                     )
                     .fill(.thinMaterial, style: FillStyle(eoFill: true))
                     .opacity(0.48)
                 } else {
                     IslandShellShape(
                         bottomCornerRadius: 22,
-                        notchWidth: NotchGeometry.width,
-                        notchDepth: NotchGeometry.height,
-                        notchTopCornerRadius: NotchGeometry.topCornerRadius,
-                        notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
+                        perchWidth: PerchGeometry.width,
+                        perchDepth: PerchGeometry.height,
+                        perchTopCornerRadius: PerchGeometry.topCornerRadius,
+                        perchBottomCornerRadius: PerchGeometry.lowerCornerRadius
                     )
                     .fill(.ultraThinMaterial, style: FillStyle(eoFill: true))
                         .opacity(panelAppearance.materialOpacity)
@@ -407,10 +407,10 @@ struct NotchView: View {
             if panelAppearance == .glass {
                 IslandShellShape(
                     bottomCornerRadius: 22,
-                    notchWidth: NotchGeometry.width,
-                    notchDepth: NotchGeometry.height,
-                    notchTopCornerRadius: NotchGeometry.topCornerRadius,
-                    notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
+                    perchWidth: PerchGeometry.width,
+                    perchDepth: PerchGeometry.height,
+                    perchTopCornerRadius: PerchGeometry.topCornerRadius,
+                    perchBottomCornerRadius: PerchGeometry.lowerCornerRadius
                 )
                 .stroke(
                     LinearGradient(
@@ -427,10 +427,10 @@ struct NotchView: View {
 
                 IslandShellShape(
                     bottomCornerRadius: 22,
-                    notchWidth: NotchGeometry.width,
-                    notchDepth: NotchGeometry.height,
-                    notchTopCornerRadius: NotchGeometry.topCornerRadius,
-                    notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
+                    perchWidth: PerchGeometry.width,
+                    perchDepth: PerchGeometry.height,
+                    perchTopCornerRadius: PerchGeometry.topCornerRadius,
+                    perchBottomCornerRadius: PerchGeometry.lowerCornerRadius
                 )
                 .stroke(
                     AngularGradient(
@@ -449,10 +449,10 @@ struct NotchView: View {
 
                 IslandShellShape(
                     bottomCornerRadius: 22,
-                    notchWidth: NotchGeometry.width,
-                    notchDepth: NotchGeometry.height,
-                    notchTopCornerRadius: NotchGeometry.topCornerRadius,
-                    notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
+                    perchWidth: PerchGeometry.width,
+                    perchDepth: PerchGeometry.height,
+                    perchTopCornerRadius: PerchGeometry.topCornerRadius,
+                    perchBottomCornerRadius: PerchGeometry.lowerCornerRadius
                 )
                 .stroke(Color.white.opacity(0.13), lineWidth: 3)
                 .blur(radius: 2.5)
@@ -476,10 +476,10 @@ struct NotchView: View {
     private var nativeBevel: some View {
         IslandShellShape(
             bottomCornerRadius: 22,
-            notchWidth: NotchGeometry.width,
-            notchDepth: NotchGeometry.height,
-            notchTopCornerRadius: NotchGeometry.topCornerRadius,
-            notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
+            perchWidth: PerchGeometry.width,
+            perchDepth: PerchGeometry.height,
+            perchTopCornerRadius: PerchGeometry.topCornerRadius,
+            perchBottomCornerRadius: PerchGeometry.lowerCornerRadius
         )
         .stroke(
             LinearGradient(
@@ -497,10 +497,10 @@ struct NotchView: View {
         .overlay(
             IslandShellShape(
                 bottomCornerRadius: 22,
-                notchWidth: NotchGeometry.width,
-                notchDepth: NotchGeometry.height,
-                notchTopCornerRadius: NotchGeometry.topCornerRadius,
-                notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
+                perchWidth: PerchGeometry.width,
+                perchDepth: PerchGeometry.height,
+                perchTopCornerRadius: PerchGeometry.topCornerRadius,
+                perchBottomCornerRadius: PerchGeometry.lowerCornerRadius
             )
             .stroke(
                 LinearGradient(
@@ -521,18 +521,18 @@ struct NotchView: View {
 
 struct IslandShellShape: Shape {
     let bottomCornerRadius: CGFloat
-    let notchWidth: CGFloat
-    let notchDepth: CGFloat
-    let notchTopCornerRadius: CGFloat
-    let notchBottomCornerRadius: CGFloat
+    let perchWidth: CGFloat
+    let perchDepth: CGFloat
+    let perchTopCornerRadius: CGFloat
+    let perchBottomCornerRadius: CGFloat
 
     func path(in rect: CGRect) -> Path {
         let bottomRadius = min(bottomCornerRadius, rect.height / 2)
-        let topRadius = min(notchTopCornerRadius, notchDepth / 2)
-        let lowerRadius = min(notchBottomCornerRadius, notchDepth / 2)
-        let notchLeft = rect.midX - notchWidth / 2
-        let notchRight = rect.midX + notchWidth / 2
-        let notchBottom = rect.minY + notchDepth
+        let topRadius = min(perchTopCornerRadius, perchDepth / 2)
+        let lowerRadius = min(perchBottomCornerRadius, perchDepth / 2)
+        let perchLeft = rect.midX - perchWidth / 2
+        let perchRight = rect.midX + perchWidth / 2
+        let perchBottom = rect.minY + perchDepth
 
         var path = Path()
         path.move(to: CGPoint(x: rect.minX, y: rect.minY))
@@ -556,34 +556,34 @@ struct IslandShellShape: Shape {
         path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
         path.closeSubpath()
 
-        path.move(to: CGPoint(x: notchLeft + topRadius, y: rect.minY))
-        path.addLine(to: CGPoint(x: notchRight - topRadius, y: rect.minY))
+        path.move(to: CGPoint(x: perchLeft + topRadius, y: rect.minY))
+        path.addLine(to: CGPoint(x: perchRight - topRadius, y: rect.minY))
         path.addArc(
-            center: CGPoint(x: notchRight - topRadius, y: rect.minY + topRadius),
+            center: CGPoint(x: perchRight - topRadius, y: rect.minY + topRadius),
             radius: topRadius,
             startAngle: .degrees(270),
             endAngle: .degrees(360),
             clockwise: false
         )
-        path.addLine(to: CGPoint(x: notchRight, y: notchBottom - lowerRadius))
+        path.addLine(to: CGPoint(x: perchRight, y: perchBottom - lowerRadius))
         path.addArc(
-            center: CGPoint(x: notchRight - lowerRadius, y: notchBottom - lowerRadius),
+            center: CGPoint(x: perchRight - lowerRadius, y: perchBottom - lowerRadius),
             radius: lowerRadius,
             startAngle: .degrees(0),
             endAngle: .degrees(90),
             clockwise: false
         )
-        path.addLine(to: CGPoint(x: notchLeft + lowerRadius, y: notchBottom))
+        path.addLine(to: CGPoint(x: perchLeft + lowerRadius, y: perchBottom))
         path.addArc(
-            center: CGPoint(x: notchLeft + lowerRadius, y: notchBottom - lowerRadius),
+            center: CGPoint(x: perchLeft + lowerRadius, y: perchBottom - lowerRadius),
             radius: lowerRadius,
             startAngle: .degrees(90),
             endAngle: .degrees(180),
             clockwise: false
         )
-        path.addLine(to: CGPoint(x: notchLeft, y: rect.minY + topRadius))
+        path.addLine(to: CGPoint(x: perchLeft, y: rect.minY + topRadius))
         path.addArc(
-            center: CGPoint(x: notchLeft + topRadius, y: rect.minY + topRadius),
+            center: CGPoint(x: perchLeft + topRadius, y: rect.minY + topRadius),
             radius: topRadius,
             startAngle: .degrees(180),
             endAngle: .degrees(270),
@@ -632,7 +632,7 @@ private final class HoverTrackingNSView: NSView {
 
         if window != nil {
             mouseExitObserver = NotificationCenter.default.addObserver(
-                forName: .notchMouseExited,
+                forName: .perchMouseExited,
                 object: nil,
                 queue: .main
             ) { [weak self] _ in

@@ -1,12 +1,12 @@
 import SwiftUI
 
-struct NotchRootView: View {
+struct PerchRootView: View {
     @StateObject private var store = WeatherStore()
 
     let layout: PanelLayout
 
     var body: some View {
-        NotchView(
+        PerchView(
             snapshot: store.snapshot,
             layout: layout,
             onForecastRangeChange: { range in

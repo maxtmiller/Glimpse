@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum NotchPage: String, CaseIterable, Identifiable {
+enum PerchPage: String, CaseIterable, Identifiable {
     case home
     case weather
     case markets
@@ -9,7 +9,7 @@ enum NotchPage: String, CaseIterable, Identifiable {
     case tokenSpend
     case settings
 
-    static var widgetPages: [NotchPage] {
+    static var widgetPages: [PerchPage] {
         allCases.filter { page in
             page != .home && page != .settings && page != .tokenSpend
         }

@@ -1,7 +1,7 @@
 import AppKit
 import SkyLightWindow
 
-final class NotchPanel: NSPanel {
+final class PerchPanel: NSPanel {
     private var isSkyLightEnabled = false
 
     override init(

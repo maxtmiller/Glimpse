@@ -9,12 +9,12 @@ struct InteractiveButtonStyle: ButtonStyle {
     }
 }
 
-struct NotchNavigationButton: View {
+struct PerchNavigationButton: View {
     let systemName: String
     let title: String
     @Binding var isHovered: Bool
     let action: () -> Void
-    @AppStorage("notch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
+    @AppStorage("perch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
     private let hoverFill = LinearGradient(
         colors: [Color.cyan.opacity(0.34), Color.blue.opacity(0.22)],
         startPoint: .topLeading,
@@ -50,9 +50,9 @@ struct NotchNavigationButton: View {
     }
 }
 
-struct NotchSummaryBadge: View {
+struct PerchSummaryBadge: View {
     let text: String
-    @AppStorage("notch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
+    @AppStorage("perch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
 
     var body: some View {
         Text(text)
@@ -78,7 +78,7 @@ struct NotchSummaryBadge: View {
     }
 }
 
-struct NotchHeader: View {
+struct PerchHeader: View {
     let title: String
     let subtitle: String
 
@@ -97,7 +97,7 @@ struct NotchHeader: View {
     }
 }
 
-struct NotchSummaryHeader: View {
+struct PerchSummaryHeader: View {
     let icon: String
     let title: String
     let subtitle: String
@@ -162,11 +162,11 @@ struct NotchSummaryHeader: View {
     }
 }
 
-struct NotchTile: View {
-    let page: NotchPage
+struct PerchTile: View {
+    let page: PerchPage
     let isSelected: Bool
     let action: () -> Void
-    @AppStorage("notch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
+    @AppStorage("perch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
 
     var body: some View {
         Button(action: action) {
@@ -217,10 +217,10 @@ struct NotchTile: View {
     }
 }
 
-struct NotchRow: View {
+struct PerchRow: View {
     let title: String
     let value: String
-    @AppStorage("notch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
+    @AppStorage("perch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
 
     var body: some View {
         HStack {
@@ -245,7 +245,7 @@ struct NotchRow: View {
     }
 }
 
-struct NotchWidgetChrome<Leading: View, Trailing: View, Expanded: View>: View {
+struct PerchWidgetChrome<Leading: View, Trailing: View, Expanded: View>: View {
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
@@ -277,7 +277,7 @@ struct NotchWidgetChrome<Leading: View, Trailing: View, Expanded: View>: View {
             start: isExpanded ? 0.06 : 0.14,
             end: isExpanded ? 0.42 : 0.72
         )
-        let sideWidth = max((shellWidth - NotchGeometry.width) / 2, 0)
+        let sideWidth = max((shellWidth - PerchGeometry.width) / 2, 0)
         let lateralOffset = isExpanded ? 0 : 14 * revealProgress(presentationProgress, start: 0.12, end: 0.68)
         let leadingAlignment: Alignment = isExpanded ? .leading : .trailing
         let trailingAlignment: Alignment = isExpanded ? .trailing : .leading
@@ -290,7 +290,7 @@ struct NotchWidgetChrome<Leading: View, Trailing: View, Expanded: View>: View {
                         .offset(x: -lateralOffset)
 
                     Color.clear
-                        .frame(width: NotchGeometry.width)
+                        .frame(width: PerchGeometry.width)
 
                     trailing()
                         .frame(width: sideWidth, alignment: trailingAlignment)

@@ -387,11 +387,11 @@ private enum MarketTrend {
     }
 }
 
-struct NotchMarketsWidgetView: View {
+struct PerchMarketsWidgetView: View {
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
-    @Binding var selectedPage: NotchPage
+    @Binding var selectedPage: PerchPage
 
     @State private var selectedAssetID = MarketSnapshot.empty.selectedAssetID
     @State private var selectedRange: MarketTimeRange = .day
@@ -402,13 +402,13 @@ struct NotchMarketsWidgetView: View {
     @StateObject private var marketStore = MarketStore()
 
     var body: some View {
-        NotchWidgetChrome(
+        PerchWidgetChrome(
             layout: layout,
             isExpanded: isExpanded,
             presentationProgress: presentationProgress,
             leading: {
                 HStack(spacing: 10) {
-                    NotchSummaryHeader(
+                    PerchSummaryHeader(
                         icon: marketTrend.symbol,
                         title: "Markets",
                         subtitle: hasMarketData ? selectedAsset.name : "Data unavailable",
@@ -421,12 +421,12 @@ struct NotchMarketsWidgetView: View {
                     if isExpanded {
                         Spacer(minLength: 0)
 
-                        NotchNavigationButton(
+                        PerchNavigationButton(
                             systemName: "house.fill",
                             title: "Home",
                             isHovered: $isHomeButtonHovered
                         ) {
-                            withAnimation(NotchMotion.pageTransitionAnimation) {
+                            withAnimation(PerchMotion.pageTransitionAnimation) {
                                 selectedPage = .home
                             }
                         }
@@ -437,12 +437,12 @@ struct NotchMarketsWidgetView: View {
             trailing: {
                 HStack(spacing: 10) {
                     if isExpanded {
-                        NotchNavigationButton(
+                        PerchNavigationButton(
                             systemName: "gearshape.fill",
                             title: "Settings",
                             isHovered: $isSettingsButtonHovered
                         ) {
-                            withAnimation(NotchMotion.pageTransitionAnimation) {
+                            withAnimation(PerchMotion.pageTransitionAnimation) {
                                 selectedPage = .settings
                             }
                         }
@@ -459,7 +459,7 @@ struct NotchMarketsWidgetView: View {
                     }
 
                     if isExpanded {
-                        NotchSummaryBadge(text: snapshot.sourceBadge)
+                        PerchSummaryBadge(text: snapshot.sourceBadge)
 
                         MarketCurrencySummary(
                             currency: selectedDisplayCurrency,
@@ -541,7 +541,7 @@ struct NotchMarketsWidgetView: View {
                                                 range: selectedRange,
                                                 displayCurrency: selectedDisplayCurrency
                                             ) {
-                                                withAnimation(NotchMotion.pageTransitionAnimation) {
+                                                withAnimation(PerchMotion.pageTransitionAnimation) {
                                                     selectedAssetID = asset.id
                                                 }
                                             }
@@ -631,13 +631,13 @@ struct NotchMarketsWidgetView: View {
     }
 
     private func cycleRange() {
-        withAnimation(.easeInOut(duration: NotchMotion.hoverAnimationDuration)) {
+        withAnimation(.easeInOut(duration: PerchMotion.hoverAnimationDuration)) {
             selectedRange = selectedRange.next
         }
     }
 
     private func cycleDisplayCurrency() {
-        withAnimation(.easeInOut(duration: NotchMotion.hoverAnimationDuration)) {
+        withAnimation(.easeInOut(duration: PerchMotion.hoverAnimationDuration)) {
             selectedDisplayCurrency = selectedDisplayCurrency.next
         }
     }
@@ -648,7 +648,7 @@ struct NotchMarketsWidgetView: View {
         let nextIndex = min(max(currentIndex + offset, 0), snapshot.assets.count - 1)
         let nextID = snapshot.assets[nextIndex].id
 
-        withAnimation(NotchMotion.pageTransitionAnimation) {
+        withAnimation(PerchMotion.pageTransitionAnimation) {
             selectedAssetID = nextID
             scrollProxy?.scrollTo(nextID, anchor: .center)
         }

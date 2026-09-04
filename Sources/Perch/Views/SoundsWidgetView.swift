@@ -1,11 +1,11 @@
 import AppKit
 import SwiftUI
 
-struct NotchSoundsWidgetView: View {
+struct PerchSoundsWidgetView: View {
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
-    @Binding var selectedPage: NotchPage
+    @Binding var selectedPage: PerchPage
 
     @StateObject private var mediaStore = SystemMediaStore()
     @State private var isHomeButtonHovered = false
@@ -49,14 +49,14 @@ struct NotchSoundsWidgetView: View {
     }
 
     private var playerContent: some View {
-        NotchWidgetChrome(
+        PerchWidgetChrome(
             layout: layout,
             isExpanded: isExpanded,
             presentationProgress: presentationProgress,
             leading: {
                 if isExpanded {
                     HStack(spacing: 10) {
-                        NotchSummaryHeader(
+                        PerchSummaryHeader(
                             icon: "waveform",
                             title: media?.isPlaying == true ? "Playing" : "Paused",
                             subtitle: "Computer audio",
@@ -65,12 +65,12 @@ struct NotchSoundsWidgetView: View {
                         )
 
                         Spacer(minLength: 0)
-                        NotchNavigationButton(
+                        PerchNavigationButton(
                             systemName: "house.fill",
                             title: "Home",
                             isHovered: $isHomeButtonHovered
                         ) {
-                            withAnimation(NotchMotion.pageTransitionAnimation) {
+                            withAnimation(PerchMotion.pageTransitionAnimation) {
                                 selectedPage = .home
                             }
                         }
@@ -83,12 +83,12 @@ struct NotchSoundsWidgetView: View {
             trailing: {
                 if isExpanded {
                     HStack(spacing: 10) {
-                        NotchNavigationButton(
+                        PerchNavigationButton(
                             systemName: "gearshape.fill",
                             title: "Settings",
                             isHovered: $isSettingsButtonHovered
                         ) {
-                            withAnimation(NotchMotion.pageTransitionAnimation) {
+                            withAnimation(PerchMotion.pageTransitionAnimation) {
                                 selectedPage = .settings
                             }
                         }
@@ -96,9 +96,9 @@ struct NotchSoundsWidgetView: View {
 
                         Spacer(minLength: 0)
 
-                        NotchSummaryBadge(text: media?.appName ?? "No audio")
+                        PerchSummaryBadge(text: media?.appName ?? "No audio")
                         if let media {
-                            NotchSummaryBadge(text: media.isPlaying ? "Playing" : "Paused")
+                            PerchSummaryBadge(text: media.isPlaying ? "Playing" : "Paused")
                         }
                     }
                     .padding(.trailing, 4)

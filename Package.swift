@@ -3,23 +3,23 @@
 import PackageDescription
 
 let package = Package(
-    name: "Notch",
+    name: "Perch",
     platforms: [
         .macOS(.v13)
     ],
     products: [
-        .executable(name: "Notch", targets: ["Notch"])
+        .executable(name: "Perch", targets: ["Perch"])
     ],
     dependencies: [
         .package(url: "https://github.com/Lakr233/SkyLightWindow", from: "1.0.0")
     ],
     targets: [
         .executableTarget(
-            name: "Notch",
+            name: "Perch",
             dependencies: [
                 .product(name: "SkyLightWindow", package: "SkyLightWindow")
             ],
-            path: "Sources/Notch"
+            path: "Sources/Perch"
         )
     ]
 )

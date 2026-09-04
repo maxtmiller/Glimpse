@@ -59,7 +59,7 @@ struct WeatherWidgetView: View {
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
-    @Binding var selectedPage: NotchPage
+    @Binding var selectedPage: PerchPage
     @Binding var temperatureUnit: TemperatureUnit
     @Binding var forecastRange: WeatherForecastRange
     @Binding var selectedGraphMetric: GraphMetric?
@@ -74,13 +74,13 @@ struct WeatherWidgetView: View {
     @State private var isSettingsButtonHovered = false
 
     var body: some View {
-        NotchWidgetChrome(
+        PerchWidgetChrome(
             layout: layout,
             isExpanded: isExpanded,
             presentationProgress: presentationProgress,
             leading: {
                 HStack(alignment: .center, spacing: 10) {
-                    NotchSummaryHeader(
+                    PerchSummaryHeader(
                         icon: snapshot.hasLiveData ? snapshot.symbol : "cloud.fill",
                         title: "Weather",
                         subtitle: "Current conditions",
@@ -132,12 +132,12 @@ struct WeatherWidgetView: View {
                     if isExpanded {
                         Spacer(minLength: 0)
 
-                        NotchNavigationButton(
+                        PerchNavigationButton(
                             systemName: "house.fill",
                             title: "Home",
                             isHovered: $isHomeButtonHovered
                         ) {
-                            withAnimation(NotchMotion.pageTransitionAnimation) {
+                            withAnimation(PerchMotion.pageTransitionAnimation) {
                                 selectedPage = .home
                             }
                         }
@@ -149,12 +149,12 @@ struct WeatherWidgetView: View {
             trailing: {
                 HStack(spacing: isExpanded ? 10 : 4) {
                     if isExpanded {
-                        NotchNavigationButton(
+                        PerchNavigationButton(
                             systemName: "gearshape.fill",
                             title: "Settings",
                             isHovered: $isSettingsButtonHovered
                         ) {
-                            withAnimation(NotchMotion.pageTransitionAnimation) {
+                            withAnimation(PerchMotion.pageTransitionAnimation) {
                                 selectedPage = .settings
                             }
                         }
@@ -176,12 +176,12 @@ struct WeatherWidgetView: View {
                 .offset(x: isExpanded ? 0 : -9)
             },
             expanded: {
-                notchWeatherExpandedView
+                perchWeatherExpandedView
             }
         )
     }
 
-    private var notchWeatherExpandedView: some View {
+    private var perchWeatherExpandedView: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 10) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -270,7 +270,7 @@ struct WeatherWidgetView: View {
         let isHovered = isUnitButtonHovered
 
         return Button {
-            withAnimation(.easeInOut(duration: NotchMotion.hoverAnimationDuration)) {
+            withAnimation(.easeInOut(duration: PerchMotion.hoverAnimationDuration)) {
                 temperatureUnit = temperatureUnit.toggled
             }
         } label: {
@@ -298,7 +298,7 @@ struct WeatherWidgetView: View {
         let isHovered = isForecastRangeButtonHovered
 
         return Button {
-            withAnimation(.easeInOut(duration: NotchMotion.hoverAnimationDuration)) {
+            withAnimation(.easeInOut(duration: PerchMotion.hoverAnimationDuration)) {
                 forecastRange = forecastRange.next
             }
         } label: {
@@ -327,7 +327,7 @@ struct WeatherWidgetView: View {
         let isHovered = hoveredMetric == metric
 
         return Button {
-            withAnimation(.easeInOut(duration: NotchMotion.hoverAnimationDuration)) {
+            withAnimation(.easeInOut(duration: PerchMotion.hoverAnimationDuration)) {
                 selectedGraphMetric = (selectedGraphMetric == metric) ? nil : metric
             }
         } label: {

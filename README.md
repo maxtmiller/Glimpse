@@ -5,13 +5,15 @@ Basic macOS notch-style weather and market panel built with SwiftUI and AppKit.
 ## What it does
 
 - Shows a floating panel centered near the top of your main display
-- Opens to a market dashboard by default, with weather still available as a page
+- Opens to a home page with Weather, Markets, Playing, and Meetings widgets
 - Loads market quotes and intraday chart data from Yahoo Finance without an API key; keeps sample data as a fallback
 - Expands on hover to show extra market or weather details
-- Pulls live location and weather data from a public weather API after you approve location access
+- Pulls live location and weather data from Open-Meteo after you approve location access
+- Shows current temperature, feels-like temperature, humidity, rain chance, wind, daily high/low, and an hourly forecast graph
+- Supports one-, three-, seven-, and sixteen-day weather forecast ranges; the graph can show temperature, feels-like temperature, humidity, rain chance, or wind
 - Shows live playback from Music or Spotify, including the source app and playback controls
-- Provides a Meetings widget for system-wide default microphone mute and speaker deafen controls
-- Shows the frontmost app, camera-in-use status, microphone activity, and selectable audio devices
+- Provides a Meetings widget for default microphone mute and speaker deafen controls, microphone activity, and camera status
+- Shows the frontmost app and selectable audio devices
 
 ## Run it
 
@@ -21,7 +23,14 @@ Requirements:
 - Xcode 15+ or the macOS Swift toolchain
 - A real macOS app bundle if you want the location prompt to appear reliably
 
-From the repository root:
+From a fresh clone:
+
+```bash
+git clone https://github.com/YOUR_USERNAME/Notch.git
+cd Notch
+```
+
+Swift Package Manager will resolve the `SkyLightWindow` dependency automatically. To run the executable directly from source:
 
 ```bash
 swift run Notch
@@ -34,10 +43,23 @@ If `swift run` reports a toolchain or SDK mismatch, open the package in Xcode in
 To bundle and launch a real `.app` with the location usage strings included:
 
 ```bash
-./scripts/bundle-macos-app.sh
+CONFIGURATION=release ./scripts/bundle-macos-app.sh
 ```
 
-That creates `.build/Notch.app` and opens it.
+That creates `.build/Notch.app` and opens it. To install it locally, drag the app into `/Applications`.
+
+The bundler converts `Assets/notch-icon.png` into the app’s `AppIcon.icns` automatically. The source icon should remain a square PNG; the current 1000×1000 RGBA asset is supported.
+
+To create a shareable DMG without signing or notarization:
+
+```bash
+mkdir -p .build/Notch-dmg
+cp -R .build/Notch.app .build/Notch-dmg/
+ln -s /Applications .build/Notch-dmg/Applications
+hdiutil create -volname "Notch" -srcfolder .build/Notch-dmg -ov -format UDZO Notch.dmg
+```
+
+Unsigned builds may trigger an “unidentified developer” warning. Users can Control-click the app, choose **Open**, and confirm the warning.
 
 If the app has not been granted location access yet, click the cloud icon to request access again. If you denied access previously, macOS will send you to System Settings so you can re-enable it there.
 
@@ -51,6 +73,7 @@ The Playing widget reads Music and Spotify through macOS Apple Events. The first
 
 ## Notes
 
-- The live weather data comes from Open-Meteo, so no WeatherKit entitlement is required.
+- The live weather data comes from Open-Meteo, so no WeatherKit entitlement is required. Weather uses hourly precipitation probability for the Rain metric; Open-Meteo also provides rain and total precipitation amounts if more detailed precipitation reporting is added later.
+- Weather refreshes automatically every 10 minutes and can be refreshed manually from the weather icon.
 - Market data is fetched from Yahoo Finance every 60 seconds. Yahoo data can be delayed depending on the exchange, and its public endpoints are intended for personal use.
 - The bundle script packages the executable and usage strings so the location prompt works from a real `.app`.

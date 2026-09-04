@@ -3,3 +3,14 @@
 /.vscode
 /scripts
 .env
+
+# Keep the project README, ignore other Markdown notes
+*.md
+!README.md
+
+# macOS and generated distribution artifacts
+.DS_Store
+*.app
+*.dmg
+*.zip
+*.iconset

@@ -325,7 +325,7 @@ struct NotchSettingsWidgetView: View {
     @State private var isHomeButtonHovered = false
     @State private var isBackButtonHovered = false
     @AppStorage("notch.defaultPage") private var defaultPageRawValue = NotchPage.sounds.rawValue
-    @AppStorage("notch.theme") private var themeRawValue = NotchTheme.system.rawValue
+    @AppStorage("notch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
     @AppStorage("notch.expandBehavior") private var expandBehaviorRawValue = NotchExpandBehavior.hover.rawValue
     @State private var launchesAtLogin = false
     @State private var showingResetConfirmation = false
@@ -413,10 +413,10 @@ struct NotchSettingsWidgetView: View {
                                 .frame(width: 120)
                             }
 
-                            settingsPickerRow(title: "Theme", detail: "Panel appearance") {
-                                Picker("Theme", selection: $themeRawValue) {
-                                    ForEach(NotchTheme.allCases) { theme in
-                                        Text(theme.title).tag(theme.rawValue)
+                            settingsPickerRow(title: "Panel appearance", detail: "Background style") {
+                                Picker("Panel appearance", selection: $panelAppearanceRawValue) {
+                                    ForEach(PanelAppearance.allCases) { appearance in
+                                        Text(appearance.title).tag(appearance.rawValue)
                                     }
                                 }
                                 .labelsHidden()
@@ -478,6 +478,10 @@ struct NotchSettingsWidgetView: View {
         NotchExpandBehavior(rawValue: expandBehaviorRawValue) ?? .hover
     }
 
+    private var usesGlassAppearance: Bool {
+        PanelAppearance(rawValue: panelAppearanceRawValue) == .glass
+    }
+
     private var appVersion: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         return version ?? "Development"
@@ -521,7 +525,7 @@ struct NotchSettingsWidgetView: View {
 
     private func resetSettings() {
         defaultPageRawValue = NotchPage.sounds.rawValue
-        themeRawValue = NotchTheme.system.rawValue
+        panelAppearanceRawValue = PanelAppearance.solid.rawValue
         expandBehaviorRawValue = NotchExpandBehavior.hover.rawValue
         setLaunchAtLogin(false)
     }
@@ -563,7 +567,14 @@ struct NotchSettingsWidgetView: View {
         .font(.system(size: 10, weight: .medium, design: .rounded))
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
-        .background(Color(red: 0.16, green: 0.17, blue: 0.19), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(usesGlassAppearance ? AnyShapeStyle(.thinMaterial) : AnyShapeStyle(Color(red: 0.16, green: 0.17, blue: 0.19)))
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(usesGlassAppearance ? Color.white.opacity(0.28) : Color.white.opacity(0.10), lineWidth: 1)
+        )
     }
 
     @ViewBuilder
@@ -579,7 +590,14 @@ struct NotchSettingsWidgetView: View {
         .font(.system(size: 10, weight: .medium, design: .rounded))
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(Color(red: 0.16, green: 0.17, blue: 0.19), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(usesGlassAppearance ? AnyShapeStyle(.thinMaterial) : AnyShapeStyle(Color(red: 0.16, green: 0.17, blue: 0.19)))
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(usesGlassAppearance ? Color.white.opacity(0.28) : Color.white.opacity(0.10), lineWidth: 1)
+        )
     }
 
     private func settingsActionRow(title: String, detail: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
@@ -596,26 +614,41 @@ struct NotchSettingsWidgetView: View {
             .font(.system(size: 10, weight: .medium, design: .rounded))
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
-            .background(Color(red: 0.16, green: 0.17, blue: 0.19), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(usesGlassAppearance ? AnyShapeStyle(.thinMaterial) : AnyShapeStyle(Color(red: 0.16, green: 0.17, blue: 0.19)))
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(usesGlassAppearance ? Color.white.opacity(0.28) : Color.white.opacity(0.10), lineWidth: 1)
+            )
         }
         .buttonStyle(InteractiveButtonStyle())
     }
 }
 
-enum NotchTheme: String, CaseIterable, Identifiable {
-    case system
-    case dark
-    case light
+enum PanelAppearance: String, CaseIterable, Identifiable {
+    case solid
+    case balanced
+    case glass
 
     var id: String { rawValue }
 
     var title: String { rawValue.capitalized }
 
-    var colorScheme: ColorScheme? {
+    var baseColor: Color {
         switch self {
-        case .system: return nil
-        case .dark: return .dark
-        case .light: return .light
+        case .solid: return Color.black
+        case .balanced: return Color.black.opacity(0.72)
+        case .glass: return Color.black.opacity(0.45)
+        }
+    }
+
+    var materialOpacity: Double {
+        switch self {
+        case .solid: return 0
+        case .balanced: return 0.35
+        case .glass: return 0.70
         }
     }
 }

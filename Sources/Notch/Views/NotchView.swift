@@ -19,6 +19,7 @@ struct NotchView: View {
     @State private var lastNonSettingsPage: NotchPage = .sounds
     @AppStorage("notch.defaultPage") private var defaultPageRawValue = NotchPage.sounds.rawValue
     @AppStorage("notch.expandBehavior") private var expandBehaviorRawValue = NotchExpandBehavior.hover.rawValue
+    @AppStorage("notch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
     @State private var temperatureUnit: TemperatureUnit = .fahrenheit
     @State private var forecastRange: WeatherForecastRange = .oneDay
     @State private var selectedGraphMetric: GraphMetric?
@@ -367,19 +368,101 @@ struct NotchView: View {
             notchTopCornerRadius: NotchGeometry.topCornerRadius,
             notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
         )
-        .fill(Color.black.opacity(0.96), style: FillStyle(eoFill: true))
-        .overlay(
-            IslandShellShape(
-                bottomCornerRadius: 22,
-                notchWidth: NotchGeometry.width,
-                notchDepth: NotchGeometry.height,
-                notchTopCornerRadius: NotchGeometry.topCornerRadius,
-                notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
-            )
-            .fill(.ultraThinMaterial, style: FillStyle(eoFill: true))
-            .opacity(0.12)
-        )
+        .fill(panelAppearance.baseColor, style: FillStyle(eoFill: true))
+        .overlay {
+            if panelAppearance.materialOpacity > 0 {
+                if panelAppearance == .glass {
+                    IslandShellShape(
+                        bottomCornerRadius: 22,
+                        notchWidth: NotchGeometry.width,
+                        notchDepth: NotchGeometry.height,
+                        notchTopCornerRadius: NotchGeometry.topCornerRadius,
+                        notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
+                    )
+                    .fill(.thinMaterial, style: FillStyle(eoFill: true))
+                } else if panelAppearance == .balanced {
+                    IslandShellShape(
+                        bottomCornerRadius: 22,
+                        notchWidth: NotchGeometry.width,
+                        notchDepth: NotchGeometry.height,
+                        notchTopCornerRadius: NotchGeometry.topCornerRadius,
+                        notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
+                    )
+                    .fill(.thinMaterial, style: FillStyle(eoFill: true))
+                    .opacity(0.48)
+                } else {
+                    IslandShellShape(
+                        bottomCornerRadius: 22,
+                        notchWidth: NotchGeometry.width,
+                        notchDepth: NotchGeometry.height,
+                        notchTopCornerRadius: NotchGeometry.topCornerRadius,
+                        notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
+                    )
+                    .fill(.ultraThinMaterial, style: FillStyle(eoFill: true))
+                        .opacity(panelAppearance.materialOpacity)
+                }
+            }
+        }
+        .overlay {
+            if panelAppearance == .glass {
+                IslandShellShape(
+                    bottomCornerRadius: 22,
+                    notchWidth: NotchGeometry.width,
+                    notchDepth: NotchGeometry.height,
+                    notchTopCornerRadius: NotchGeometry.topCornerRadius,
+                    notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
+                )
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.44),
+                            Color.white.opacity(0.12),
+                            Color.black.opacity(0.36)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1.2
+                )
+
+                IslandShellShape(
+                    bottomCornerRadius: 22,
+                    notchWidth: NotchGeometry.width,
+                    notchDepth: NotchGeometry.height,
+                    notchTopCornerRadius: NotchGeometry.topCornerRadius,
+                    notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
+                )
+                .stroke(
+                    AngularGradient(
+                        colors: [
+                            Color.cyan.opacity(0.22),
+                            Color.blue.opacity(0.16),
+                            Color.purple.opacity(0.22),
+                            Color.orange.opacity(0.14),
+                            Color.cyan.opacity(0.22)
+                        ],
+                        center: .center
+                    ),
+                    lineWidth: 2.2
+                )
+                .blur(radius: 1.2)
+
+                IslandShellShape(
+                    bottomCornerRadius: 22,
+                    notchWidth: NotchGeometry.width,
+                    notchDepth: NotchGeometry.height,
+                    notchTopCornerRadius: NotchGeometry.topCornerRadius,
+                    notchBottomCornerRadius: NotchGeometry.lowerCornerRadius
+                )
+                .stroke(Color.white.opacity(0.13), lineWidth: 3)
+                .blur(radius: 2.5)
+            }
+        }
         .overlay(nativeBevel)
+    }
+
+    private var panelAppearance: PanelAppearance {
+        PanelAppearance(rawValue: panelAppearanceRawValue) ?? .solid
     }
 
     private var collapsedShellHeight: CGFloat {

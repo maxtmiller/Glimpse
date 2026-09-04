@@ -2,7 +2,6 @@ import SwiftUI
 
 struct NotchRootView: View {
     @StateObject private var store = WeatherStore()
-    @AppStorage("notch.theme") private var themeRawValue = NotchTheme.system.rawValue
 
     let layout: PanelLayout
 
@@ -18,7 +17,6 @@ struct NotchRootView: View {
                 store.requestLocationAccess()
             }
         )
-        .preferredColorScheme(NotchTheme(rawValue: themeRawValue)?.colorScheme)
         .onAppear {
             store.start()
         }

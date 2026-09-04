@@ -14,6 +14,7 @@ struct NotchNavigationButton: View {
     let title: String
     @Binding var isHovered: Bool
     let action: () -> Void
+    @AppStorage("notch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
     private let hoverFill = LinearGradient(
         colors: [Color.cyan.opacity(0.34), Color.blue.opacity(0.22)],
         startPoint: .topLeading,
@@ -24,7 +25,7 @@ struct NotchNavigationButton: View {
         Button(action: action) {
             ZStack {
                 Circle()
-                    .fill(isHovered ? AnyShapeStyle(hoverFill) : AnyShapeStyle(Color.black.opacity(0.94)))
+                    .fill(isHovered ? AnyShapeStyle(hoverFill) : buttonFill)
                     .overlay(
                         Circle()
                             .stroke(isHovered ? Color.white.opacity(0.34) : Color.white.opacity(0.08), lineWidth: 1)
@@ -41,10 +42,17 @@ struct NotchNavigationButton: View {
         .onHover { isHovered = $0 }
         .help(title)
     }
+
+    private var buttonFill: AnyShapeStyle {
+        panelAppearanceRawValue == PanelAppearance.glass.rawValue
+            ? AnyShapeStyle(.thinMaterial)
+            : AnyShapeStyle(Color.black.opacity(0.94))
+    }
 }
 
 struct NotchSummaryBadge: View {
     let text: String
+    @AppStorage("notch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
 
     var body: some View {
         Text(text)
@@ -54,11 +62,18 @@ struct NotchSummaryBadge: View {
             .padding(.vertical, 4)
             .background(
                 Capsule(style: .continuous)
-                    .fill(Color.white.opacity(0.10))
+                    .fill(panelAppearanceRawValue == PanelAppearance.glass.rawValue
+                        ? AnyShapeStyle(.thinMaterial)
+                        : AnyShapeStyle(Color.white.opacity(0.10)))
             )
             .overlay(
                 Capsule(style: .continuous)
-                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    .stroke(
+                        panelAppearanceRawValue == PanelAppearance.glass.rawValue
+                            ? Color.white.opacity(0.28)
+                            : Color.white.opacity(0.10),
+                        lineWidth: 1
+                    )
             )
     }
 }
@@ -151,6 +166,7 @@ struct NotchTile: View {
     let page: NotchPage
     let isSelected: Bool
     let action: () -> Void
+    @AppStorage("notch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
 
     var body: some View {
         Button(action: action) {
@@ -183,7 +199,13 @@ struct NotchTile: View {
             .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isSelected ? Color.white.opacity(0.18) : Color.white.opacity(0.09))
+                    .fill(
+                        isSelected
+                            ? AnyShapeStyle(Color.white.opacity(0.18))
+                            : panelAppearanceRawValue == PanelAppearance.glass.rawValue
+                                ? AnyShapeStyle(.thinMaterial)
+                                : AnyShapeStyle(Color.white.opacity(0.09))
+                    )
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -198,6 +220,7 @@ struct NotchTile: View {
 struct NotchRow: View {
     let title: String
     let value: String
+    @AppStorage("notch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
 
     var body: some View {
         HStack {
@@ -215,7 +238,9 @@ struct NotchRow: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.08))
+                .fill(panelAppearanceRawValue == PanelAppearance.glass.rawValue
+                    ? AnyShapeStyle(.thinMaterial)
+                    : AnyShapeStyle(Color.white.opacity(0.08)))
         )
     }
 }

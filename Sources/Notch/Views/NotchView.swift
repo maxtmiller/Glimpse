@@ -18,6 +18,7 @@ struct NotchView: View {
     @State private var selectedPage: NotchPage = .sounds
     @State private var lastNonSettingsPage: NotchPage = .sounds
     @AppStorage("notch.defaultPage") private var defaultPageRawValue = NotchPage.sounds.rawValue
+    @AppStorage("notch.expandBehavior") private var expandBehaviorRawValue = NotchExpandBehavior.hover.rawValue
     @State private var temperatureUnit: TemperatureUnit = .fahrenheit
     @State private var forecastRange: WeatherForecastRange = .oneDay
     @State private var selectedGraphMetric: GraphMetric?
@@ -68,6 +69,8 @@ struct NotchView: View {
         return ZStack(alignment: .top) {
             islandBackground
                 .frame(width: shellWidth, height: shellHeight, alignment: .top)
+
+            collapsedClickTarget
 
             selectedWidgetView
                 .frame(width: shellWidth, height: shellHeight, alignment: .top)
@@ -167,11 +170,29 @@ struct NotchView: View {
                 lastNonSettingsPage = configuredPage
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .notchDismissRequested)) { _ in
+            guard expandBehaviorRawValue == NotchExpandBehavior.click.rawValue else { return }
+            setDisplayState(.collapsed)
+        }
     }
 
     private var hiddenToggleLayer: some View {
         notchToggleButton
             .allowsHitTesting(displayState == .hidden)
+    }
+
+    private var collapsedClickTarget: some View {
+        Group {
+            if displayState == .collapsed,
+               expandBehaviorRawValue == NotchExpandBehavior.click.rawValue {
+                Button(action: toggleCollapsedVisibility) {
+                    Color.clear
+                        .frame(width: layout.collapsedWidth, height: collapsedShellHeight)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
 
     private var notchToggleButton: some View {
@@ -223,6 +244,7 @@ struct NotchView: View {
 
     private func handleHoverChange(_ hovering: Bool) {
         guard displayState != .hidden else { return }
+        guard expandBehaviorRawValue == NotchExpandBehavior.hover.rawValue else { return }
 
         if hovering {
             // Only suppress NEW expansions during animation windows
@@ -269,7 +291,13 @@ struct NotchView: View {
             // A click on the notch is an intentional launch gesture: reveal the
             // selected widget directly into its full canvas.
             setDisplayState(.expanded)
-        case .collapsed, .expanded:
+        case .collapsed:
+            if expandBehaviorRawValue == NotchExpandBehavior.click.rawValue {
+                setDisplayState(.expanded)
+            } else {
+                setDisplayState(.hidden)
+            }
+        case .expanded:
             setDisplayState(.hidden)
         }
     }

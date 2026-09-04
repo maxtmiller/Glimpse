@@ -8,6 +8,7 @@ struct NotchHomeWidgetView: View {
     let presentationProgress: CGFloat
     @Binding var selectedPage: NotchPage
     @StateObject private var batteryMonitor = BatteryMonitor()
+    @State private var isSettingsButtonHovered = false
 
     var body: some View {
         NotchWidgetChrome(
@@ -24,8 +25,21 @@ struct NotchHomeWidgetView: View {
                 )
             },
             trailing: {
-                HStack(spacing: 5) {
-                    if !isExpanded {
+                HStack(spacing: 10) {
+                    if isExpanded {
+                        NotchNavigationButton(
+                            systemName: "gearshape.fill",
+                            title: "Settings",
+                            isHovered: $isSettingsButtonHovered
+                        ) {
+                            withAnimation(NotchMotion.pageTransitionAnimation) {
+                                selectedPage = .settings
+                            }
+                        }
+                        .offset(x: 4)
+
+                        Spacer(minLength: 0)
+                    } else {
                         BatteryIndicator(reading: batteryMonitor.reading)
                     }
                 }
@@ -143,22 +157,36 @@ private struct BatteryIndicator: View {
 
     private var fillColor: Color {
         guard let reading else { return .white.opacity(0.45) }
-        if reading.percentage <= 20 && !reading.isCharging { return .red }
-        return reading.isCharging ? .green : .white.opacity(0.88)
+        switch reading.percentage {
+        case 0...10: return .red
+        case 11...20: return .orange
+        case 21...50: return .yellow
+        default: return .green
+        }
     }
 
     var body: some View {
         HStack(spacing: 5) {
             HStack(spacing: 1.5) {
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .stroke(Color.white.opacity(0.72), lineWidth: 1)
+                ZStack {
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .stroke(Color.white.opacity(0.72), lineWidth: 1)
 
-                    GeometryReader { proxy in
-                        RoundedRectangle(cornerRadius: 2, style: .continuous)
-                            .fill(fillColor)
-                            .frame(width: proxy.size.width * CGFloat(reading?.percentage ?? 0) / 100)
-                            .padding(1.5)
+                        GeometryReader { proxy in
+                            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                                .fill(fillColor)
+                                .frame(width: proxy.size.width * CGFloat(reading?.percentage ?? 0) / 100)
+                                .padding(1.5)
+                        }
+                    }
+                    .frame(width: 25, height: 13)
+
+                    if reading?.isCharging == true {
+                        Image(systemName: "bolt.fill")
+                            .font(.system(size: 7, weight: .bold))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.45), radius: 1)
                     }
                 }
                 .frame(width: 25, height: 13)
@@ -173,7 +201,9 @@ private struct BatteryIndicator: View {
                 .foregroundStyle(.white.opacity(0.88))
                 .monospacedDigit()
         }
-        .help(reading.map { "Battery: \($0.percentage)%" } ?? "Battery unavailable")
+        .help(reading.map {
+            "Battery: \($0.percentage)% · \($0.isCharging ? "Charging" : ($0.isPluggedIn ? "Plugged in" : "Not charging"))"
+        } ?? "Battery unavailable")
     }
 }
 
@@ -296,8 +326,8 @@ struct NotchSettingsWidgetView: View {
     @State private var isBackButtonHovered = false
     @AppStorage("notch.defaultPage") private var defaultPageRawValue = NotchPage.sounds.rawValue
     @AppStorage("notch.theme") private var themeRawValue = NotchTheme.system.rawValue
+    @AppStorage("notch.expandBehavior") private var expandBehaviorRawValue = NotchExpandBehavior.hover.rawValue
     @State private var launchesAtLogin = false
-    @State private var showingDiagnostics = false
     @State private var showingResetConfirmation = false
     @State private var settingsMessage: String?
 
@@ -350,16 +380,22 @@ struct NotchSettingsWidgetView: View {
                     }
 
                     HStack(spacing: 5) {
-                        NotchSummaryBadge(text: "Panel")
-                        NotchSummaryBadge(text: selectedTheme.title)
+                        NotchSummaryBadge(text: selectedExpandBehavior.title)
+                        NotchSummaryBadge(text: "v\(appVersion)")
                     }
                 }
                 .padding(.trailing, 4)
             },
             expanded: {
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        VStack(spacing: 6) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        LazyVGrid(
+                            columns: [
+                                GridItem(.flexible(), spacing: 8),
+                                GridItem(.flexible(), spacing: 8)
+                            ],
+                            spacing: 10
+                        ) {
                             settingsToggleRow(
                                 title: "Launch at login",
                                 detail: "Open Notch when you sign in",
@@ -387,8 +423,18 @@ struct NotchSettingsWidgetView: View {
                                 .frame(width: 120)
                             }
 
+                            settingsPickerRow(title: "Expand behavior", detail: "Hover or click to open") {
+                                Picker("Expand behavior", selection: $expandBehaviorRawValue) {
+                                    ForEach(NotchExpandBehavior.allCases) { behavior in
+                                        Text(behavior.title).tag(behavior.rawValue)
+                                    }
+                                }
+                                .labelsHidden()
+                                .frame(width: 120)
+                            }
+
                             settingsActionRow(title: "Diagnostics", detail: "View app and system information") {
-                                showingDiagnostics = true
+                                showDiagnostics()
                             }
 
                             settingsActionRow(title: "Reset settings", detail: "Restore the default preferences", isDestructive: true) {
@@ -406,17 +452,12 @@ struct NotchSettingsWidgetView: View {
                         .font(.system(size: 10, weight: .medium, design: .rounded))
                     }
                     .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
+                    .padding(.vertical, 8)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         )
         .task { launchesAtLogin = loginItemIsEnabled }
-        .alert("Diagnostics", isPresented: $showingDiagnostics) {
-            Button("Done", role: .cancel) { }
-        } message: {
-            Text(diagnosticsText)
-        }
         .alert("Reset settings?", isPresented: $showingResetConfirmation) {
             Button("Reset", role: .destructive, action: resetSettings)
             Button("Cancel", role: .cancel) { }
@@ -433,8 +474,8 @@ struct NotchSettingsWidgetView: View {
         }
     }
 
-    private var selectedTheme: NotchTheme {
-        NotchTheme(rawValue: themeRawValue) ?? .system
+    private var selectedExpandBehavior: NotchExpandBehavior {
+        NotchExpandBehavior(rawValue: expandBehaviorRawValue) ?? .hover
     }
 
     private var appVersion: String {
@@ -481,7 +522,30 @@ struct NotchSettingsWidgetView: View {
     private func resetSettings() {
         defaultPageRawValue = NotchPage.sounds.rawValue
         themeRawValue = NotchTheme.system.rawValue
+        expandBehaviorRawValue = NotchExpandBehavior.hover.rawValue
         setLaunchAtLogin(false)
+    }
+
+    private func showDiagnostics() {
+        let alert = NSAlert()
+        alert.messageText = "Diagnostics"
+        alert.informativeText = diagnosticsText
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Done")
+
+        if let screen = NSScreen.main ?? NSScreen.screens.first {
+            let alertFrame = alert.window.frame
+            let visibleFrame = screen.visibleFrame
+            alert.window.setFrameOrigin(NSPoint(
+                x: visibleFrame.midX - alertFrame.width / 2,
+                y: visibleFrame.midY - alertFrame.height / 2
+            ))
+        }
+
+        // SwiftUI alerts attach to the notch panel. A native modal alert is
+        // explicitly centered on the main display instead of appearing over the notch.
+        NSApp.activate(ignoringOtherApps: true)
+        alert.runModal()
     }
 
     @ViewBuilder
@@ -498,8 +562,8 @@ struct NotchSettingsWidgetView: View {
         }
         .font(.system(size: 10, weight: .medium, design: .rounded))
         .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .padding(.vertical, 7)
+        .background(Color(red: 0.16, green: 0.17, blue: 0.19), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     @ViewBuilder
@@ -514,8 +578,8 @@ struct NotchSettingsWidgetView: View {
         }
         .font(.system(size: 10, weight: .medium, design: .rounded))
         .padding(.horizontal, 10)
-        .padding(.vertical, 3)
-        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .padding(.vertical, 5)
+        .background(Color(red: 0.16, green: 0.17, blue: 0.19), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private func settingsActionRow(title: String, detail: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
@@ -531,8 +595,8 @@ struct NotchSettingsWidgetView: View {
             }
             .font(.system(size: 10, weight: .medium, design: .rounded))
             .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .padding(.vertical, 7)
+            .background(Color(red: 0.16, green: 0.17, blue: 0.19), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(InteractiveButtonStyle())
     }
@@ -554,4 +618,13 @@ enum NotchTheme: String, CaseIterable, Identifiable {
         case .light: return .light
         }
     }
+}
+
+enum NotchExpandBehavior: String, CaseIterable, Identifiable {
+    case hover
+    case click
+
+    var id: String { rawValue }
+
+    var title: String { rawValue.capitalized }
 }

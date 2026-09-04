@@ -7,6 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var anchoredFrame: NSRect?
     private var currentState: NotchPresentationState = .hidden
     private var mouseTrackingTimer: Timer?
+    private var globalClickMonitor: Any?
     private var wasInsideInteractiveRect: Bool?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -37,7 +38,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         RunLoop.main.add(mouseTrackingTimer!, forMode: .common)
 
+        globalClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { [weak self] _ in
+            self?.dismissOnOutsideClickIfNeeded()
+        }
+
         presentPanel()
+    }
+
+    deinit {
+        if let globalClickMonitor {
+            NSEvent.removeMonitor(globalClickMonitor)
+        }
+    }
+
+    private func dismissOnOutsideClickIfNeeded() {
+        guard currentState == .expanded,
+              UserDefaults.standard.string(forKey: "notch.expandBehavior") == "click",
+              NSApp.modalWindow == nil,
+              let panel,
+              !panel.frame.contains(NSEvent.mouseLocation)
+        else {
+            return
+        }
+
+        NotificationCenter.default.post(name: .notchDismissRequested, object: nil)
     }
 
     func applicationDidResignActive(_ notification: Notification) {
@@ -160,4 +184,5 @@ private enum NotchPresentationState: String {
 extension Notification.Name {
     static let notchPresentationStateDidChange = Notification.Name("NotchPresentationStateDidChange")
     static let notchMouseExited = Notification.Name("NotchMouseExited")
+    static let notchDismissRequested = Notification.Name("NotchDismissRequested")
 }

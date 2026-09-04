@@ -9,6 +9,7 @@ struct NotchSoundsWidgetView: View {
 
     @StateObject private var mediaStore = SystemMediaStore()
     @State private var isHomeButtonHovered = false
+    @State private var isSettingsButtonHovered = false
     @State private var hoveredControl: String?
     @State private var hoveredSpotifyTrackID: String?
     @State private var spotifyListMode: SpotifyListMode = .recentlyPlayed
@@ -81,7 +82,20 @@ struct NotchSoundsWidgetView: View {
             },
             trailing: {
                 if isExpanded {
-                    HStack(spacing: 5) {
+                    HStack(spacing: 10) {
+                        NotchNavigationButton(
+                            systemName: "gearshape.fill",
+                            title: "Settings",
+                            isHovered: $isSettingsButtonHovered
+                        ) {
+                            withAnimation(NotchMotion.pageTransitionAnimation) {
+                                selectedPage = .settings
+                            }
+                        }
+                        .offset(x: 4)
+
+                        Spacer(minLength: 0)
+
                         NotchSummaryBadge(text: media?.appName ?? "No audio")
                         if let media {
                             NotchSummaryBadge(text: media.isPlaying ? "Playing" : "Paused")

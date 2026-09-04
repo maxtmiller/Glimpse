@@ -1,3 +1,5 @@
+import AppKit
+import ServiceManagement
 import SwiftUI
 
 struct NotchHomeWidgetView: View {
@@ -39,7 +41,7 @@ struct NotchHomeWidgetView: View {
 
                         Spacer(minLength: 0)
 
-                        Text("6 APPS")
+                        Text("\(NotchPage.widgetPages.count) APPS")
                             .font(.system(size: 9, weight: .bold, design: .rounded))
                             .foregroundStyle(.white.opacity(0.42))
                             .tracking(0.8)
@@ -52,7 +54,7 @@ struct NotchHomeWidgetView: View {
                         ],
                         spacing: 10
                     ) {
-                        ForEach(NotchPage.allCases.filter { $0 != .home }) { page in
+                        ForEach(NotchPage.widgetPages) { page in
                             HomeAppTile(page: page, isSelected: selectedPage == page) {
                                 withAnimation(NotchMotion.pageTransitionAnimation) {
                                     selectedPage = page
@@ -289,8 +291,15 @@ struct NotchSettingsWidgetView: View {
     let isExpanded: Bool
     let presentationProgress: CGFloat
     @Binding var selectedPage: NotchPage
+    let previousPage: NotchPage
     @State private var isHomeButtonHovered = false
-    @State private var isSettingsButtonHovered = false
+    @State private var isBackButtonHovered = false
+    @AppStorage("notch.defaultPage") private var defaultPageRawValue = NotchPage.sounds.rawValue
+    @AppStorage("notch.theme") private var themeRawValue = NotchTheme.system.rawValue
+    @State private var launchesAtLogin = false
+    @State private var showingDiagnostics = false
+    @State private var showingResetConfirmation = false
+    @State private var settingsMessage: String?
 
     var body: some View {
         NotchWidgetChrome(
@@ -327,12 +336,12 @@ struct NotchSettingsWidgetView: View {
                 HStack(spacing: 10) {
                     if isExpanded {
                         NotchNavigationButton(
-                            systemName: "gearshape.fill",
-                            title: "Settings",
-                            isHovered: $isSettingsButtonHovered
+                            systemName: "arrow.left",
+                            title: "Back",
+                            isHovered: $isBackButtonHovered
                         ) {
                             withAnimation(NotchMotion.pageTransitionAnimation) {
-                                selectedPage = .settings
+                                selectedPage = previousPage
                             }
                         }
                         .offset(x: 4)
@@ -342,28 +351,207 @@ struct NotchSettingsWidgetView: View {
 
                     HStack(spacing: 5) {
                         NotchSummaryBadge(text: "Panel")
-                        NotchSummaryBadge(text: "Theme")
+                        NotchSummaryBadge(text: selectedTheme.title)
                     }
                 }
                 .padding(.trailing, 4)
             },
             expanded: {
-                VStack(alignment: .leading, spacing: 10) {
-                    NotchHeader(
-                        title: "Settings",
-                        subtitle: "Scaffold for panel controls and preferences."
-                    )
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        VStack(spacing: 6) {
+                            settingsToggleRow(
+                                title: "Launch at login",
+                                detail: "Open Notch when you sign in",
+                                isOn: $launchesAtLogin,
+                                action: setLaunchAtLogin
+                            )
 
-                    VStack(spacing: 8) {
-                        NotchRow(title: "Launch at login", value: "Soon")
-                        NotchRow(title: "Compact mode", value: "Soon")
-                        NotchRow(title: "Default widget", value: selectedPage == .home ? "Home" : selectedPage.title)
+                            settingsPickerRow(title: "Default widget", detail: "Shown when Notch opens") {
+                                Picker("Default widget", selection: $defaultPageRawValue) {
+                                    ForEach(NotchPage.widgetPages) { page in
+                                        Text(page.title).tag(page.rawValue)
+                                    }
+                                }
+                                .labelsHidden()
+                                .frame(width: 120)
+                            }
+
+                            settingsPickerRow(title: "Theme", detail: "Panel appearance") {
+                                Picker("Theme", selection: $themeRawValue) {
+                                    ForEach(NotchTheme.allCases) { theme in
+                                        Text(theme.title).tag(theme.rawValue)
+                                    }
+                                }
+                                .labelsHidden()
+                                .frame(width: 120)
+                            }
+
+                            settingsActionRow(title: "Diagnostics", detail: "View app and system information") {
+                                showingDiagnostics = true
+                            }
+
+                            settingsActionRow(title: "Reset settings", detail: "Restore the default preferences", isDestructive: true) {
+                                showingResetConfirmation = true
+                            }
+                        }
+
+                        HStack {
+                            Text("Version")
+                                .foregroundStyle(.white.opacity(0.52))
+                            Spacer()
+                            Text(appVersion)
+                                .foregroundStyle(.white.opacity(0.72))
+                        }
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
                     }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
                 }
-                .padding(.horizontal, 10)
-                .padding(.bottom, 12)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         )
+        .task { launchesAtLogin = loginItemIsEnabled }
+        .alert("Diagnostics", isPresented: $showingDiagnostics) {
+            Button("Done", role: .cancel) { }
+        } message: {
+            Text(diagnosticsText)
+        }
+        .alert("Reset settings?", isPresented: $showingResetConfirmation) {
+            Button("Reset", role: .destructive, action: resetSettings)
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This restores the default widget, theme, and launch-at-login setting.")
+        }
+        .alert("Settings", isPresented: Binding(
+            get: { settingsMessage != nil },
+            set: { if !$0 { settingsMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { settingsMessage = nil }
+        } message: {
+            Text(settingsMessage ?? "")
+        }
+    }
+
+    private var selectedTheme: NotchTheme {
+        NotchTheme(rawValue: themeRawValue) ?? .system
+    }
+
+    private var appVersion: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        return version ?? "Development"
+    }
+
+    private var loginItemIsEnabled: Bool {
+        SMAppService.mainApp.status == .enabled
+    }
+
+    private var diagnosticsText: String {
+        "Notch \(appVersion)\nmacOS \(ProcessInfo.processInfo.operatingSystemVersionString)\nDefault widget: \(defaultPage.title)\nLaunch at login: \(launchItemStatus)"
+    }
+
+    private var defaultPage: NotchPage {
+        NotchPage(rawValue: defaultPageRawValue).flatMap { NotchPage.widgetPages.contains($0) ? $0 : nil } ?? .sounds
+    }
+
+    private var launchItemStatus: String {
+        switch SMAppService.mainApp.status {
+        case .enabled: return "Enabled"
+        case .requiresApproval: return "Requires approval"
+        case .notRegistered: return "Disabled"
+        case .notFound: return "Unavailable"
+        @unknown default: return "Unknown"
+        }
+    }
+
+    private func setLaunchAtLogin(_ enabled: Bool) {
+        do {
+            if enabled {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+            launchesAtLogin = loginItemIsEnabled
+        } catch {
+            launchesAtLogin = loginItemIsEnabled
+            settingsMessage = "Could not update Launch at login: \(error.localizedDescription)"
+        }
+    }
+
+    private func resetSettings() {
+        defaultPageRawValue = NotchPage.sounds.rawValue
+        themeRawValue = NotchTheme.system.rawValue
+        setLaunchAtLogin(false)
+    }
+
+    @ViewBuilder
+    private func settingsToggleRow(title: String, detail: String, isOn: Binding<Bool>, action: @escaping (Bool) -> Void) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).foregroundStyle(.white)
+                Text(detail).foregroundStyle(.white.opacity(0.48))
+            }
+            Spacer()
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .onChange(of: isOn.wrappedValue, perform: action)
+        }
+        .font(.system(size: 10, weight: .medium, design: .rounded))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func settingsPickerRow<Control: View>(title: String, detail: String, @ViewBuilder control: () -> Control) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).foregroundStyle(.white)
+                Text(detail).foregroundStyle(.white.opacity(0.48))
+            }
+            Spacer()
+            control()
+        }
+        .font(.system(size: 10, weight: .medium, design: .rounded))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 3)
+        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private func settingsActionRow(title: String, detail: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).foregroundStyle(isDestructive ? .red.opacity(0.9) : .white)
+                    Text(detail).foregroundStyle(.white.opacity(0.48))
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(.white.opacity(0.38))
+            }
+            .font(.system(size: 10, weight: .medium, design: .rounded))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(InteractiveButtonStyle())
+    }
+}
+
+enum NotchTheme: String, CaseIterable, Identifiable {
+    case system
+    case dark
+    case light
+
+    var id: String { rawValue }
+
+    var title: String { rawValue.capitalized }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: return nil
+        case .dark: return .dark
+        case .light: return .light
+        }
     }
 }

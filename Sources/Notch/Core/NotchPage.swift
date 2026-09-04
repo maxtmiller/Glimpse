@@ -9,6 +9,12 @@ enum NotchPage: String, CaseIterable, Identifiable {
     case tokenSpend
     case settings
 
+    static var widgetPages: [NotchPage] {
+        allCases.filter { page in
+            page != .home && page != .settings && page != .tokenSpend
+        }
+    }
+
     var id: String { rawValue }
 
     var title: String {

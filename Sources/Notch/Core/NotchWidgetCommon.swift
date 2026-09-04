@@ -271,7 +271,8 @@ struct NotchWidgetChrome<Leading: View, Trailing: View, Expanded: View>: View {
                         .frame(width: sideWidth, alignment: trailingAlignment)
                         .offset(x: lateralOffset)
                 }
-                .padding(.horizontal, 10)
+                // Keep top-bar controls comfortably inside the expanded panel edges.
+                .padding(.horizontal, 16)
                 .padding(.vertical, 4)
                 .frame(height: layout.topBarHeight - 16, alignment: .center)
                 .opacity(topReveal)

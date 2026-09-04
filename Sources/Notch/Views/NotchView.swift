@@ -16,6 +16,8 @@ struct NotchView: View {
 
     @State private var displayState: DisplayState = .hidden
     @State private var selectedPage: NotchPage = .sounds
+    @State private var lastNonSettingsPage: NotchPage = .sounds
+    @AppStorage("notch.defaultPage") private var defaultPageRawValue = NotchPage.sounds.rawValue
     @State private var temperatureUnit: TemperatureUnit = .fahrenheit
     @State private var forecastRange: WeatherForecastRange = .oneDay
     @State private var selectedGraphMetric: GraphMetric?
@@ -146,12 +148,25 @@ struct NotchView: View {
                     layout: layout,
                     isExpanded: isExpanded,
                     presentationProgress: presentationProgress,
-                    selectedPage: $selectedPage
+                    selectedPage: $selectedPage,
+                    previousPage: lastNonSettingsPage
                 )
                 .transition(pageSwapTransition)
             }
         }
         .animation(NotchMotion.pageTransitionAnimation, value: selectedPage)
+        .onChange(of: selectedPage) { newPage in
+            if newPage != .settings {
+                lastNonSettingsPage = newPage
+            }
+        }
+        .onAppear {
+            if let configuredPage = NotchPage(rawValue: defaultPageRawValue),
+               NotchPage.widgetPages.contains(configuredPage) {
+                selectedPage = configuredPage
+                lastNonSettingsPage = configuredPage
+            }
+        }
     }
 
     private var hiddenToggleLayer: some View {

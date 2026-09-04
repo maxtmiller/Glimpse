@@ -525,29 +525,54 @@ struct NotchMarketsWidgetView: View {
                         .frame(height: 68)
 
                     if hasMarketData {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                ForEach(snapshot.assets) { asset in
-                                    MarketAssetCard(
-                                        asset: asset,
-                                        isSelected: selectedAssetID == asset.id,
-                                        isHovered: hoveredAssetID == asset.id,
-                                        range: selectedRange,
-                                        displayCurrency: selectedDisplayCurrency
-                                    ) {
-                                        withAnimation(NotchMotion.pageTransitionAnimation) {
-                                            selectedAssetID = asset.id
+                        ScrollViewReader { scrollProxy in
+                            HStack(spacing: 4) {
+                                MarketAssetScrollButton(systemName: "chevron.left") {
+                                    moveSelectedAsset(by: -1, scrollProxy: scrollProxy)
+                                }
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 8) {
+                                        ForEach(snapshot.assets) { asset in
+                                            MarketAssetCard(
+                                                asset: asset,
+                                                isSelected: selectedAssetID == asset.id,
+                                                isHovered: hoveredAssetID == asset.id,
+                                                range: selectedRange,
+                                                displayCurrency: selectedDisplayCurrency
+                                            ) {
+                                                withAnimation(NotchMotion.pageTransitionAnimation) {
+                                                    selectedAssetID = asset.id
+                                                }
+                                            }
+                                            .id(asset.id)
+                                            .onHover { hovering in
+                                                hoveredAssetID = hovering ? asset.id : (hoveredAssetID == asset.id ? nil : hoveredAssetID)
+                                            }
                                         }
                                     }
-                                    .onHover { hovering in
-                                        hoveredAssetID = hovering ? asset.id : (hoveredAssetID == asset.id ? nil : hoveredAssetID)
+                                    .padding(.horizontal, 1)
+                                    .padding(.vertical, 4)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 54)
+                                .focusable()
+                                .onMoveCommand { direction in
+                                    switch direction {
+                                    case .left:
+                                        moveSelectedAsset(by: -1, scrollProxy: scrollProxy)
+                                    case .right:
+                                        moveSelectedAsset(by: 1, scrollProxy: scrollProxy)
+                                    default:
+                                        break
                                     }
                                 }
+
+                                MarketAssetScrollButton(systemName: "chevron.right") {
+                                    moveSelectedAsset(by: 1, scrollProxy: scrollProxy)
+                                }
                             }
-                            .padding(.horizontal, 1)
-                            .padding(.vertical, 4)
                         }
-                        .frame(height: 54)
                     } else {
                         Text("No market data available")
                             .font(.system(size: 10, weight: .medium, design: .rounded))
@@ -617,6 +642,18 @@ struct NotchMarketsWidgetView: View {
         }
     }
 
+    private func moveSelectedAsset(by offset: Int, scrollProxy: ScrollViewProxy? = nil) {
+        guard !snapshot.assets.isEmpty else { return }
+        let currentIndex = snapshot.assets.firstIndex { $0.id == selectedAssetID } ?? 0
+        let nextIndex = min(max(currentIndex + offset, 0), snapshot.assets.count - 1)
+        let nextID = snapshot.assets[nextIndex].id
+
+        withAnimation(NotchMotion.pageTransitionAnimation) {
+            selectedAssetID = nextID
+            scrollProxy?.scrollTo(nextID, anchor: .center)
+        }
+    }
+
     private func statRow(title: String, value: String) -> some View {
         HStack(spacing: 4) {
             Text(title)
@@ -650,6 +687,34 @@ struct NotchMarketsWidgetView: View {
                 statRow(title: "Vol", value: "—")
             }
         }
+    }
+}
+
+private struct MarketAssetScrollButton: View {
+    let systemName: String
+    let action: () -> Void
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(isHovered ? .white : .white.opacity(0.78))
+                .frame(width: 22, height: 42)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(isHovered ? Color.cyan.opacity(0.34) : Color.black.opacity(0.86))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(isHovered ? Color.white.opacity(0.48) : Color.white.opacity(0.18), lineWidth: 1)
+                )
+                .shadow(color: isHovered ? Color.cyan.opacity(0.28) : .black.opacity(0.28), radius: isHovered ? 6 : 3)
+                .scaleEffect(isHovered ? 1.05 : 1)
+        }
+        .buttonStyle(InteractiveButtonStyle())
+        .onHover { isHovered = $0 }
+        .help(systemName == "chevron.left" ? "Previous asset" : "Next asset")
     }
 }
 

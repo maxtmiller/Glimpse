@@ -9,6 +9,7 @@ struct NotchMeetingsWidgetView: View {
     @StateObject private var controls = MeetingControlsStore()
     @State private var hoveredControl: String?
     @State private var isHomeButtonHovered = false
+    @State private var isSettingsButtonHovered = false
 
     var body: some View {
         NotchWidgetChrome(
@@ -41,7 +42,22 @@ struct NotchMeetingsWidgetView: View {
                 }
             },
             trailing: {
-                HStack(spacing: 5) {
+                HStack(spacing: isExpanded ? 10 : 5) {
+                    if isExpanded {
+                        NotchNavigationButton(
+                            systemName: "gearshape.fill",
+                            title: "Settings",
+                            isHovered: $isSettingsButtonHovered
+                        ) {
+                            withAnimation(NotchMotion.pageTransitionAnimation) {
+                                selectedPage = .settings
+                            }
+                        }
+                        .offset(x: 4)
+
+                        Spacer(minLength: 0)
+                    }
+
                     NotchSummaryBadge(text: statusText)
                 }
                 .padding(.trailing, 4)

@@ -30,6 +30,7 @@ enum GraphMetric: Hashable {
     case temperature
     case feelsLike
     case humidity
+    case rain
     case wind
 
     var title: String {
@@ -37,6 +38,7 @@ enum GraphMetric: Hashable {
         case .temperature: return "Temperature"
         case .feelsLike: return "Feels like"
         case .humidity: return "Humidity"
+        case .rain: return "Rain"
         case .wind: return "Wind"
         }
     }
@@ -46,6 +48,7 @@ enum GraphMetric: Hashable {
         case .temperature: return Color.cyan
         case .feelsLike: return Color.blue
         case .humidity: return Color.cyan.opacity(0.92)
+        case .rain: return Color.green.opacity(0.88)
         case .wind: return Color.blue.opacity(0.88)
         }
     }
@@ -204,6 +207,7 @@ struct WeatherWidgetView: View {
                         width: 84
                     )
                     metricPill(metric: .humidity, title: "Humidity", value: displayMetricValue(snapshot.humidity, suffix: "%"), width: 76)
+                    metricPill(metric: .rain, title: "Rain", value: displayMetricValue(snapshot.rainChance, suffix: "%"), width: 62)
                     metricPill(
                         metric: .wind,
                         title: "Wind",
@@ -514,6 +518,8 @@ struct WeatherWidgetView: View {
                 return Double(convertedTemperature(hour.feelsLike))
             case .humidity:
                 return Double(hour.humidity)
+            case .rain:
+                return Double(hour.rainChance)
             case .wind:
                 return Double(convertedWind(hour.wind))
             }
@@ -574,6 +580,8 @@ struct WeatherWidgetView: View {
             return "\(rounded)°"
         case .humidity:
             return "\(rounded)%"
+        case .rain:
+            return "\(rounded)%"
         case .wind:
             return "\(rounded) \(windArrow(for: hour.windDirectionDegrees))"
         }
@@ -581,6 +589,8 @@ struct WeatherWidgetView: View {
 
     private var graphTitle: String {
         switch selectedGraphMetric {
+        case .rain:
+            return "Rain chance"
         case .wind:
             return "Wind (\(temperatureUnit.windSpeedUnit))"
         case .some(let metric):

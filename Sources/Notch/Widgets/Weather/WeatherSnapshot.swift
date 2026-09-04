@@ -36,6 +36,7 @@ struct WeatherSnapshot {
         let temperature: Int
         let feelsLike: Int
         let humidity: Int
+        let rainChance: Int
         let wind: Int
         let windDirectionDegrees: Int
         let isCurrentHour: Bool
@@ -52,6 +53,7 @@ struct WeatherSnapshot {
     let high: Int
     let low: Int
     let humidity: Int
+    let rainChance: Int
     let wind: Int
     let hourly: [HourlyForecast]
     let timeZoneIdentifier: String
@@ -85,6 +87,7 @@ struct WeatherSnapshot {
                 temperature: temperature,
                 feelsLike: temperature + (hour % 3 == 0 ? 2 : 1),
                 humidity: sampleHumidity(for: hour),
+                rainChance: hour >= 17 && hour <= 19 ? 45 : 8,
                 wind: sampleWind(for: hour),
                 windDirectionDegrees: sampleWindDirection(for: hour),
                 isCurrentHour: hour == nowHour
@@ -103,6 +106,7 @@ struct WeatherSnapshot {
             high: 76,
             low: 61,
             humidity: 58,
+            rainChance: 8,
             wind: 9,
             hourly: hourly,
             timeZoneIdentifier: calendar.timeZone.identifier
@@ -121,6 +125,7 @@ struct WeatherSnapshot {
         high: 0,
         low: 0,
         humidity: 0,
+        rainChance: 0,
         wind: 0,
         hourly: [],
         timeZoneIdentifier: TimeZone.current.identifier
@@ -139,6 +144,7 @@ struct WeatherSnapshot {
             high: 0,
             low: 0,
             humidity: 0,
+            rainChance: 0,
             wind: 0,
             hourly: [],
             timeZoneIdentifier: TimeZone.current.identifier
@@ -158,6 +164,7 @@ struct WeatherSnapshot {
             high: 0,
             low: 0,
             humidity: 0,
+            rainChance: 0,
             wind: 0,
             hourly: [],
             timeZoneIdentifier: TimeZone.current.identifier
@@ -175,6 +182,7 @@ struct WeatherSnapshot {
         high: Int,
         low: Int,
         humidity: Int,
+        rainChance: Int,
         wind: Int,
         timeZoneIdentifier: String,
         hourly: [HourlyForecast]
@@ -191,6 +199,7 @@ struct WeatherSnapshot {
             high: high,
             low: low,
             humidity: humidity,
+            rainChance: rainChance,
             wind: wind,
             hourly: hourly,
             timeZoneIdentifier: timeZoneIdentifier

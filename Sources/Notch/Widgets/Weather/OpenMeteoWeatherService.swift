@@ -34,7 +34,7 @@ enum OpenMeteoWeatherService {
             ),
             URLQueryItem(
                 name: "hourly",
-                value: "temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code"
+                value: "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation_probability,wind_speed_10m,wind_direction_10m,weather_code"
             ),
             URLQueryItem(
                 name: "daily",
@@ -112,6 +112,7 @@ enum OpenMeteoWeatherService {
         let temperatures = doubleArrayValue(hourlyPayload, key: "temperature_2m") ?? doubleArrayValue(hourlyPayload, key: "temperature2m") ?? []
         let feelsLikes = doubleArrayValue(hourlyPayload, key: "apparent_temperature") ?? doubleArrayValue(hourlyPayload, key: "apparentTemperature") ?? []
         let humidities = doubleArrayValue(hourlyPayload, key: "relative_humidity_2m") ?? doubleArrayValue(hourlyPayload, key: "relativeHumidity2m") ?? []
+        let rainChances = doubleArrayValue(hourlyPayload, key: "precipitation_probability") ?? doubleArrayValue(hourlyPayload, key: "precipitationProbability") ?? []
         let winds = doubleArrayValue(hourlyPayload, key: "wind_speed_10m") ?? doubleArrayValue(hourlyPayload, key: "windSpeed10m") ?? doubleArrayValue(hourlyPayload, key: "windspeed") ?? []
         let windDirections = doubleArrayValue(hourlyPayload, key: "wind_direction_10m") ?? doubleArrayValue(hourlyPayload, key: "windDirection10m") ?? []
         let weatherCodes = intArrayValue(hourlyPayload, key: "weather_code") ?? intArrayValue(hourlyPayload, key: "weatherCode") ?? intArrayValue(hourlyPayload, key: "weathercode") ?? []
@@ -126,6 +127,7 @@ enum OpenMeteoWeatherService {
             let hourTemperature = Int((temperatures[safe: index] ?? Double(temperature)).rounded())
             let hourFeelsLike = Int((feelsLikes[safe: index] ?? Double(feelsLike)).rounded())
             let hourHumidity = Int((humidities[safe: index] ?? Double(humidity)).rounded())
+            let hourRainChance = Int((rainChances[safe: index] ?? 0).rounded())
             let hourWind = Int((winds[safe: index] ?? Double(wind)).rounded())
             let hourWindDirection = Int((windDirections[safe: index] ?? Double(windDirection)).rounded())
             let hourCode = weatherCodes[safe: index] ?? currentCode
@@ -138,11 +140,14 @@ enum OpenMeteoWeatherService {
                 temperature: hourTemperature,
                 feelsLike: hourFeelsLike,
                 humidity: hourHumidity,
+                rainChance: hourRainChance,
                 wind: hourWind,
                 windDirectionDegrees: hourWindDirection,
                 isCurrentHour: calendar.isDate(date, equalTo: now, toGranularity: .hour)
             )
         }
+
+        let currentRainChance = hourlyForecasts.first(where: { $0.isCurrentHour })?.rainChance ?? Int((rainChances.first ?? 0).rounded())
 
         return WeatherSnapshot.live(
             city: city,
@@ -155,6 +160,7 @@ enum OpenMeteoWeatherService {
             high: high,
             low: low,
             humidity: humidity,
+            rainChance: currentRainChance,
             wind: wind,
             timeZoneIdentifier: timeZone.identifier,
             hourly: hourlyForecasts

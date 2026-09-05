@@ -46,6 +46,11 @@ final class SystemMediaStore: ObservableObject {
         RunLoop.main.add(pollTimer!, forMode: .common)
     }
 
+    func stop() {
+        pollTimer?.invalidate()
+        pollTimer = nil
+    }
+
     func togglePlayback() {
         guard let activePlayer else { return }
         runCommand(activePlayer, command: """

@@ -21,11 +21,11 @@ final class MeetingControlsStore: ObservableObject {
     @Published private(set) var outputMuted = false
     @Published private(set) var inputName = "Default microphone"
     @Published private(set) var outputName = "Default speakers"
+    @Published private(set) var outputVolume: Float = 0
     @Published private(set) var inputDevices: [AudioDevice] = []
     @Published private(set) var outputDevices: [AudioDevice] = []
     @Published private(set) var selectedInputID: AudioDeviceID?
     @Published private(set) var selectedOutputID: AudioDeviceID?
-    @Published private(set) var frontmostAppName = "Desktop"
     @Published private(set) var cameraInUse = false
     @Published private(set) var microphoneLevel: Float = 0
 
@@ -71,13 +71,6 @@ final class MeetingControlsStore: ObservableObject {
         setDefaultDevice(device.id, selector: kAudioHardwarePropertyDefaultOutputDevice)
     }
 
-    func openCameraSettings() {
-        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera") else {
-            return
-        }
-        NSWorkspace.shared.open(url)
-    }
-
     private func refresh() {
         let input = defaultDevice(scope: kAudioHardwarePropertyDefaultInputDevice)
         let output = defaultDevice(scope: kAudioHardwarePropertyDefaultOutputDevice)
@@ -91,8 +84,25 @@ final class MeetingControlsStore: ObservableObject {
         outputMuted = output.map { isMuted($0, scope: kAudioObjectPropertyScopeOutput) } ?? false
         inputName = input.flatMap(deviceName) ?? "No microphone"
         outputName = output.flatMap(deviceName) ?? "No speakers"
-        frontmostAppName = NSWorkspace.shared.frontmostApplication?.localizedName ?? "Desktop"
-        cameraInUse = AVCaptureDevice.default(for: .video)?.isInUseByAnotherApplication ?? false
+        outputVolume = output.flatMap(volume) ?? 0
+        cameraInUse = discoveredVideoDevices().contains { $0.isInUseByAnotherApplication }
+    }
+
+    private func discoveredVideoDevices() -> [AVCaptureDevice] {
+        var deviceTypes: [AVCaptureDevice.DeviceType] = [
+            .builtInWideAngleCamera,
+            .externalUnknown
+        ]
+
+        if #available(macOS 14.0, *) {
+            deviceTypes.append(.continuityCamera)
+        }
+
+        return AVCaptureDevice.DiscoverySession(
+            deviceTypes: deviceTypes,
+            mediaType: .video,
+            position: .unspecified
+        ).devices
     }
 
     private func startMicrophoneMeter() {
@@ -191,6 +201,20 @@ final class MeetingControlsStore: ObservableObject {
             return false
         }
         return value != 0
+    }
+
+    private func volume(_ device: AudioDeviceID) -> Float? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyVolumeScalar,
+            mScope: kAudioObjectPropertyScopeOutput,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var value: Float = 0
+        var size = UInt32(MemoryLayout<Float>.size)
+        guard AudioObjectGetPropertyData(device, &address, 0, nil, &size, &value) == noErr else {
+            return nil
+        }
+        return min(1, max(0, value))
     }
 
     private func defaultDevice(scope: AudioObjectPropertySelector) -> AudioDeviceID? {

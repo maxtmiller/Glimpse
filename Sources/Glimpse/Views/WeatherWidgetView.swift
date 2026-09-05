@@ -59,7 +59,7 @@ struct WeatherWidgetView: View {
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
-    @Binding var selectedPage: PerchPage
+    @Binding var selectedPage: GlimpsePage
     @Binding var temperatureUnit: TemperatureUnit
     @Binding var forecastRange: WeatherForecastRange
     @Binding var selectedGraphMetric: GraphMetric?
@@ -74,13 +74,13 @@ struct WeatherWidgetView: View {
     @State private var isSettingsButtonHovered = false
 
     var body: some View {
-        PerchWidgetChrome(
+        GlimpseWidgetChrome(
             layout: layout,
             isExpanded: isExpanded,
             presentationProgress: presentationProgress,
             leading: {
                 HStack(alignment: .center, spacing: 10) {
-                    PerchSummaryHeader(
+                    GlimpseSummaryHeader(
                         icon: snapshot.hasLiveData ? snapshot.symbol : "cloud.fill",
                         title: "Weather",
                         subtitle: "Current conditions",
@@ -132,12 +132,12 @@ struct WeatherWidgetView: View {
                     if isExpanded {
                         Spacer(minLength: 0)
 
-                        PerchNavigationButton(
+                        GlimpseNavigationButton(
                             systemName: "house.fill",
                             title: "Home",
                             isHovered: $isHomeButtonHovered
                         ) {
-                            withAnimation(PerchMotion.pageTransitionAnimation) {
+                            withAnimation(GlimpseMotion.pageTransitionAnimation) {
                                 selectedPage = .home
                             }
                         }
@@ -149,12 +149,12 @@ struct WeatherWidgetView: View {
             trailing: {
                 HStack(spacing: isExpanded ? 10 : 4) {
                     if isExpanded {
-                        PerchNavigationButton(
+                        GlimpseNavigationButton(
                             systemName: "gearshape.fill",
                             title: "Settings",
                             isHovered: $isSettingsButtonHovered
                         ) {
-                            withAnimation(PerchMotion.pageTransitionAnimation) {
+                            withAnimation(GlimpseMotion.pageTransitionAnimation) {
                                 selectedPage = .settings
                             }
                         }
@@ -165,7 +165,7 @@ struct WeatherWidgetView: View {
 
                     temperatureChip
                     if !isExpanded {
-                        collapsedHumidity
+                        collapsedRainChance
                     }
                     if isExpanded {
                         unitToggleButton
@@ -176,12 +176,12 @@ struct WeatherWidgetView: View {
                 .offset(x: isExpanded ? 0 : -9)
             },
             expanded: {
-                perchWeatherExpandedView
+                glimpseWeatherExpandedView
             }
         )
     }
 
-    private var perchWeatherExpandedView: some View {
+    private var glimpseWeatherExpandedView: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 10) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -250,13 +250,15 @@ struct WeatherWidgetView: View {
         .background(.white.opacity(0.08), in: Capsule())
     }
 
-    private var collapsedHumidity: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "drop.fill")
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(Color.cyan.opacity(0.82))
+    private var collapsedRainChance: some View {
+        let rainChance = nearTermRainChance
 
-            Text(displayMetricValue(snapshot.humidity, suffix: "%"))
+        return HStack(spacing: 4) {
+            Image(systemName: "cloud.rain.fill")
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(Color.green.opacity(0.88))
+
+            Text(displayMetricValue(rainChance, suffix: "%"))
                 .font(.system(size: 11.5, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.86))
                 .contentTransition(.numericText())
@@ -266,11 +268,19 @@ struct WeatherWidgetView: View {
         .background(.white.opacity(0.06), in: Capsule())
     }
 
+    private var nearTermRainChance: Int {
+        guard !snapshot.hourly.isEmpty else { return snapshot.rainChance }
+
+        let currentIndex = snapshot.hourly.firstIndex(where: { $0.isCurrentHour }) ?? 0
+        let upcomingHours = snapshot.hourly.dropFirst(currentIndex).prefix(6)
+        return upcomingHours.map(\.rainChance).max() ?? snapshot.rainChance
+    }
+
     private var unitToggleButton: some View {
         let isHovered = isUnitButtonHovered
 
         return Button {
-            withAnimation(.easeInOut(duration: PerchMotion.hoverAnimationDuration)) {
+            withAnimation(.easeInOut(duration: GlimpseMotion.hoverAnimationDuration)) {
                 temperatureUnit = temperatureUnit.toggled
             }
         } label: {
@@ -298,7 +308,7 @@ struct WeatherWidgetView: View {
         let isHovered = isForecastRangeButtonHovered
 
         return Button {
-            withAnimation(.easeInOut(duration: PerchMotion.hoverAnimationDuration)) {
+            withAnimation(.easeInOut(duration: GlimpseMotion.hoverAnimationDuration)) {
                 forecastRange = forecastRange.next
             }
         } label: {
@@ -327,7 +337,7 @@ struct WeatherWidgetView: View {
         let isHovered = hoveredMetric == metric
 
         return Button {
-            withAnimation(.easeInOut(duration: PerchMotion.hoverAnimationDuration)) {
+            withAnimation(.easeInOut(duration: GlimpseMotion.hoverAnimationDuration)) {
                 selectedGraphMetric = (selectedGraphMetric == metric) ? nil : metric
             }
         } label: {

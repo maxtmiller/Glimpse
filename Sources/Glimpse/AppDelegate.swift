@@ -2,10 +2,10 @@ import AppKit
 import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private var panel: PerchPanel?
+    private var panel: GlimpsePanel?
     private var layout = PanelLayout.from(screen: NSScreen.main)
     private var anchoredFrame: NSRect?
-    private var currentState: PerchPresentationState = .hidden
+    private var currentState: GlimpsePresentationState = .hidden
     private var mouseTrackingTimer: Timer?
     private var globalClickMonitor: Any?
     private var wasInsideInteractiveRect: Bool?
@@ -17,17 +17,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ?? NSScreen.main
             ?? NSScreen.screens.first
         layout = PanelLayout.from(screen: anchorScreen)
-        anchoredFrame = perchFrame(for: anchorScreen, size: fixedPanelSize)
+        anchoredFrame = glimpseFrame(for: anchorScreen, size: fixedPanelSize)
 
-        let rootView = AnyView(PerchRootView(layout: layout))
-        let panel = PerchPanel(contentRect: .zero)
+        let rootView = AnyView(GlimpseRootView(layout: layout))
+        let panel = GlimpsePanel(contentRect: .zero)
         panel.contentView = NSHostingView(rootView: rootView)
         self.panel = panel
 
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handlePresentationStateChange(_:)),
-            name: .perchPresentationStateDidChange,
+            name: .glimpsePresentationStateDidChange,
             object: nil
         )
         position(panel: panel)
@@ -53,7 +53,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func dismissOnOutsideClickIfNeeded() {
         guard currentState == .expanded,
-              UserDefaults.standard.string(forKey: "perch.expandBehavior") == "click",
+              UserDefaults.standard.string(forKey: "glimpse.expandBehavior") == "click",
               NSApp.modalWindow == nil,
               let panel,
               !panel.frame.contains(NSEvent.mouseLocation)
@@ -61,7 +61,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        NotificationCenter.default.post(name: .perchDismissRequested, object: nil)
+        NotificationCenter.default.post(name: .glimpseDismissRequested, object: nil)
     }
 
     func applicationDidResignActive(_ notification: Notification) {
@@ -77,19 +77,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSSize(width: layout.expandedWidth, height: layout.topBarHeight + layout.expandedBodyHeight)
     }
 
-    private func position(panel: PerchPanel) {
-        let frame = anchoredFrame ?? perchFrame(for: NSScreen.main ?? NSScreen.screens.first, size: fixedPanelSize)
+    private func position(panel: GlimpsePanel) {
+        let frame = anchoredFrame ?? glimpseFrame(for: NSScreen.main ?? NSScreen.screens.first, size: fixedPanelSize)
         panel.setFrame(frame, display: false)
     }
 
-    private func perchFrame(for screen: NSScreen?, size: NSSize) -> NSRect {
+    private func glimpseFrame(for screen: NSScreen?, size: NSSize) -> NSRect {
         guard let screen else {
             return NSRect(origin: .zero, size: size)
         }
 
         let frame = screen.frame
         // Keep a small portion of the panel above the display edge so the
-        // perch remains enterable when the cursor approaches from the top.
+        // glimpse remains enterable when the cursor approaches from the top.
         let topOverlap: CGFloat = 2
         let x = frame.midX - size.width / 2
         let y = frame.maxY - size.height + topOverlap
@@ -99,7 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func handlePresentationStateChange(_ notification: Notification) {
         guard let rawState = notification.userInfo?["state"] as? String,
-              let state = PerchPresentationState(rawValue: rawState)
+              let state = GlimpsePresentationState(rawValue: rawState)
         else {
             return
         }
@@ -130,7 +130,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // AppKit mouseExited event. Keep the SwiftUI hover tracker
             // synchronized with the screen-space hit test.
             if !isInsideInteractiveRect && currentState == .expanded {
-                NotificationCenter.default.post(name: .perchMouseExited, object: nil)
+                NotificationCenter.default.post(name: .glimpseMouseExited, object: nil)
             }
         }
 
@@ -143,7 +143,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func interactiveRect(for state: PerchPresentationState, in panel: NSWindow) -> NSRect {
+    private func interactiveRect(for state: GlimpsePresentationState, in panel: NSWindow) -> NSRect {
         let frame = panel.frame
         let padding: CGFloat = 2.0 // 2px safety margin on all sides
 
@@ -151,9 +151,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .hidden:
             let handleHeight = max(layout.topBarHeight - 16, 28)
             let rect = NSRect(
-                x: frame.midX - PerchGeometry.width / 2,
+                x: frame.midX - GlimpseGeometry.width / 2,
                 y: frame.maxY - handleHeight,
-                width: PerchGeometry.width,
+                width: GlimpseGeometry.width,
                 height: handleHeight
             )
             // Inset by negative padding to grow the hit target slightly in all directions
@@ -175,14 +175,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-private enum PerchPresentationState: String {
+private enum GlimpsePresentationState: String {
     case hidden
     case collapsed
     case expanded
 }
 
 extension Notification.Name {
-    static let perchPresentationStateDidChange = Notification.Name("PerchPresentationStateDidChange")
-    static let perchMouseExited = Notification.Name("PerchMouseExited")
-    static let perchDismissRequested = Notification.Name("PerchDismissRequested")
+    static let glimpsePresentationStateDidChange = Notification.Name("GlimpsePresentationStateDidChange")
+    static let glimpseMouseExited = Notification.Name("GlimpseMouseExited")
+    static let glimpseDismissRequested = Notification.Name("GlimpseDismissRequested")
 }

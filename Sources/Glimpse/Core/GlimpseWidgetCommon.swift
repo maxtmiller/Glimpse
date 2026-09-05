@@ -9,12 +9,12 @@ struct InteractiveButtonStyle: ButtonStyle {
     }
 }
 
-struct PerchNavigationButton: View {
+struct GlimpseNavigationButton: View {
     let systemName: String
     let title: String
     @Binding var isHovered: Bool
     let action: () -> Void
-    @AppStorage("perch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
+    @AppStorage("glimpse.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
     private let hoverFill = LinearGradient(
         colors: [Color.cyan.opacity(0.34), Color.blue.opacity(0.22)],
         startPoint: .topLeading,
@@ -50,9 +50,9 @@ struct PerchNavigationButton: View {
     }
 }
 
-struct PerchSummaryBadge: View {
+struct GlimpseSummaryBadge: View {
     let text: String
-    @AppStorage("perch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
+    @AppStorage("glimpse.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
 
     var body: some View {
         Text(text)
@@ -78,7 +78,7 @@ struct PerchSummaryBadge: View {
     }
 }
 
-struct PerchHeader: View {
+struct GlimpseHeader: View {
     let title: String
     let subtitle: String
 
@@ -97,7 +97,7 @@ struct PerchHeader: View {
     }
 }
 
-struct PerchSummaryHeader: View {
+struct GlimpseSummaryHeader: View {
     let icon: String
     let title: String
     let subtitle: String
@@ -162,11 +162,11 @@ struct PerchSummaryHeader: View {
     }
 }
 
-struct PerchTile: View {
-    let page: PerchPage
+struct GlimpseTile: View {
+    let page: GlimpsePage
     let isSelected: Bool
     let action: () -> Void
-    @AppStorage("perch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
+    @AppStorage("glimpse.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
 
     var body: some View {
         Button(action: action) {
@@ -217,10 +217,10 @@ struct PerchTile: View {
     }
 }
 
-struct PerchRow: View {
+struct GlimpseRow: View {
     let title: String
     let value: String
-    @AppStorage("perch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
+    @AppStorage("glimpse.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
 
     var body: some View {
         HStack {
@@ -245,7 +245,7 @@ struct PerchRow: View {
     }
 }
 
-struct PerchWidgetChrome<Leading: View, Trailing: View, Expanded: View>: View {
+struct GlimpseWidgetChrome<Leading: View, Trailing: View, Expanded: View>: View {
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
@@ -277,7 +277,7 @@ struct PerchWidgetChrome<Leading: View, Trailing: View, Expanded: View>: View {
             start: isExpanded ? 0.06 : 0.14,
             end: isExpanded ? 0.42 : 0.72
         )
-        let sideWidth = max((shellWidth - PerchGeometry.width) / 2, 0)
+        let sideWidth = max((shellWidth - GlimpseGeometry.width) / 2, 0)
         let lateralOffset = isExpanded ? 0 : 14 * revealProgress(presentationProgress, start: 0.12, end: 0.68)
         let leadingAlignment: Alignment = isExpanded ? .leading : .trailing
         let trailingAlignment: Alignment = isExpanded ? .trailing : .leading
@@ -290,7 +290,7 @@ struct PerchWidgetChrome<Leading: View, Trailing: View, Expanded: View>: View {
                         .offset(x: -lateralOffset)
 
                     Color.clear
-                        .frame(width: PerchGeometry.width)
+                        .frame(width: GlimpseGeometry.width)
 
                     trailing()
                         .frame(width: sideWidth, alignment: trailingAlignment)

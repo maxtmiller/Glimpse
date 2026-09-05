@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-APP_NAME="Perch"
+APP_NAME="Glimpse"
 CONFIGURATION="${CONFIGURATION:-debug}"
 APP_VERSION="${APP_VERSION:-1.0.1}"
 APP_BUILD="${APP_BUILD:-101}"
@@ -11,8 +11,8 @@ BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 BUILD_DIR="$ROOT_DIR/.build/$CONFIGURATION"
 APP_BUNDLE="$ROOT_DIR/.build/$APP_NAME.app"
 EXECUTABLE="$BUILD_DIR/$APP_NAME"
-ICON_SOURCE="$ROOT_DIR/Assets/perch-icon.png"
-ICONSET_DIR="$ROOT_DIR/.build/Perch.iconset"
+ICON_SOURCE="$ROOT_DIR/Assets/glimpse-icon.png"
+ICONSET_DIR="$ROOT_DIR/.build/Glimpse.iconset"
 
 swift build -c "$CONFIGURATION" --product "$APP_NAME"
 
@@ -45,17 +45,17 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<EOF
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleExecutable</key>
-    <string>Perch</string>
+    <string>Glimpse</string>
     <key>CFBundleIdentifier</key>
-    <string>com.maxtmiller.Perch</string>
+    <string>com.maxtmiller.Glimpse</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>Perch</string>
+    <string>Glimpse</string>
     <key>CFBundleDisplayName</key>
-    <string>Perch</string>
+    <string>Glimpse</string>
     <key>CFBundleGetInfoString</key>
-    <string>Perch — glanceable information and controls for macOS</string>
+    <string>Glimpse — glanceable information and controls for macOS</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleShortVersionString</key>
@@ -70,18 +70,18 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<EOF
     <string>public.app-category.utilities</string>
     <key>NSHumanReadableCopyright</key>
     <string>$APP_COPYRIGHT</string>
-    <key>PerchBuildDate</key>
+    <key>GlimpseBuildDate</key>
     <string>$BUILD_DATE</string>
     <key>NSLocationUsageDescription</key>
-    <string>Perch uses your location to show local weather and forecast data.</string>
+    <string>Glimpse uses your location to show local weather and forecast data.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Perch uses your location to show local weather and forecast data.</string>
+    <string>Glimpse uses your location to show local weather and forecast data.</string>
     <key>NSAppleEventsUsageDescription</key>
-    <string>Perch uses Apple Events to read and control playback in supported media apps.</string>
+    <string>Glimpse uses Apple Events to read and control playback in supported media apps.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Perch uses the microphone level to show meeting audio activity.</string>
+    <string>Glimpse uses the microphone level to show meeting audio activity.</string>
     <key>NSCameraUsageDescription</key>
-    <string>Perch checks whether the camera is currently in use during meetings.</string>
+    <string>Glimpse checks whether the camera is currently in use during meetings.</string>
 </dict>
 </plist>
 EOF

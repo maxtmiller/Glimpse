@@ -1,4 +1,4 @@
-# Perch
+# Glimpse
 
 ![Swift](https://img.shields.io/badge/Swift-F05138?style=flat&logo=swift&logoColor=white) ![SwiftUI](https://img.shields.io/badge/SwiftUI-007AFF?style=flat&logo=swift&logoColor=white) ![macOS](https://img.shields.io/badge/macOS-13%2B-000000?style=flat&logo=apple&logoColor=white)
 
@@ -21,33 +21,33 @@
 
 ## Setup
 
-### 1. Download Perch
+### 1. Download Glimpse
 
-Perch requires macOS 13 or newer. Download the latest `Perch.dmg` from the [GitHub Releases page](../../releases).
+Glimpse requires macOS 13 or newer. Download the latest `Glimpse.dmg` from the [GitHub Releases page](../../releases).
 
 ### 2. Install the App
 
 * Open the downloaded DMG.
-* Drag `Perch.app` into your **Applications** folder.
+* Drag `Glimpse.app` into your **Applications** folder.
 
-### 3. Open Perch
+### 3. Open Glimpse
 
 The current release is unsigned, so macOS may show an unidentified-developer warning the first time:
 
 * Open **Applications** in Finder.
-* Control-click `Perch.app` and choose **Open**.
+* Control-click `Glimpse.app` and choose **Open**.
 * Confirm the macOS security prompt.
 
 This confirmation is normally required only on the first launch.
 
-> 💡 **Tip:** Perch may request location, microphone, camera, and media-control permissions. Approve the permissions needed for the widgets you want to use. If location access was denied, re-enable it under **System Settings → Privacy & Security → Location Services**.
+> 💡 **Tip:** Glimpse may request location, microphone, camera, and media-control permissions. Approve the permissions needed for the widgets you want to use. If location access was denied, re-enable it under **System Settings → Privacy & Security → Location Services**.
 
 ## Development
 
 Open `Package.swift` in Xcode and press **Run**, or run the executable directly:
 
 ```bash
-swift run Perch
+swift run Glimpse
 ```
 
 Developer release and DMG packaging instructions are kept in [`AGENTS.md`](AGENTS.md).

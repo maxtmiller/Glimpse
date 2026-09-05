@@ -1,12 +1,12 @@
 import AppKit
 import SkyLightWindow
 
-final class PerchPanel: NSPanel {
+final class GlimpsePanel: NSPanel {
     private var isSkyLightEnabled = false
 
     override init(
         contentRect: NSRect, 
-        styleMask style: NSWindow.StyleMask = [.borderless, .nonactivatingPanel, .fullSizeContentView], 
+        styleMask style: NSWindow.StyleMask = [.borderless, .nonactivatingPanel, .fullSizeContentView],
         backing bufferingType: NSWindow.BackingStoreType = .buffered, 
         defer flag: Bool = false
     ) {

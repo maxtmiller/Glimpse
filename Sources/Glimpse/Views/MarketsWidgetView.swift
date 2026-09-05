@@ -387,11 +387,11 @@ private enum MarketTrend {
     }
 }
 
-struct PerchMarketsWidgetView: View {
+struct GlimpseMarketsWidgetView: View {
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
-    @Binding var selectedPage: PerchPage
+    @Binding var selectedPage: GlimpsePage
 
     @State private var selectedAssetID = MarketSnapshot.empty.selectedAssetID
     @State private var selectedRange: MarketTimeRange = .day
@@ -402,13 +402,13 @@ struct PerchMarketsWidgetView: View {
     @StateObject private var marketStore = MarketStore()
 
     var body: some View {
-        PerchWidgetChrome(
+        GlimpseWidgetChrome(
             layout: layout,
             isExpanded: isExpanded,
             presentationProgress: presentationProgress,
             leading: {
                 HStack(spacing: 10) {
-                    PerchSummaryHeader(
+                    GlimpseSummaryHeader(
                         icon: marketTrend.symbol,
                         title: "Markets",
                         subtitle: hasMarketData ? selectedAsset.name : "Data unavailable",
@@ -421,12 +421,12 @@ struct PerchMarketsWidgetView: View {
                     if isExpanded {
                         Spacer(minLength: 0)
 
-                        PerchNavigationButton(
+                        GlimpseNavigationButton(
                             systemName: "house.fill",
                             title: "Home",
                             isHovered: $isHomeButtonHovered
                         ) {
-                            withAnimation(PerchMotion.pageTransitionAnimation) {
+                            withAnimation(GlimpseMotion.pageTransitionAnimation) {
                                 selectedPage = .home
                             }
                         }
@@ -437,12 +437,12 @@ struct PerchMarketsWidgetView: View {
             trailing: {
                 HStack(spacing: 10) {
                     if isExpanded {
-                        PerchNavigationButton(
+                        GlimpseNavigationButton(
                             systemName: "gearshape.fill",
                             title: "Settings",
                             isHovered: $isSettingsButtonHovered
                         ) {
-                            withAnimation(PerchMotion.pageTransitionAnimation) {
+                            withAnimation(GlimpseMotion.pageTransitionAnimation) {
                                 selectedPage = .settings
                             }
                         }
@@ -459,7 +459,7 @@ struct PerchMarketsWidgetView: View {
                     }
 
                     if isExpanded {
-                        PerchSummaryBadge(text: snapshot.sourceBadge)
+                        GlimpseSummaryBadge(text: snapshot.sourceBadge)
 
                         MarketCurrencySummary(
                             currency: selectedDisplayCurrency,
@@ -541,7 +541,7 @@ struct PerchMarketsWidgetView: View {
                                                 range: selectedRange,
                                                 displayCurrency: selectedDisplayCurrency
                                             ) {
-                                                withAnimation(PerchMotion.pageTransitionAnimation) {
+                                                withAnimation(GlimpseMotion.pageTransitionAnimation) {
                                                     selectedAssetID = asset.id
                                                 }
                                             }
@@ -631,13 +631,13 @@ struct PerchMarketsWidgetView: View {
     }
 
     private func cycleRange() {
-        withAnimation(.easeInOut(duration: PerchMotion.hoverAnimationDuration)) {
+        withAnimation(.easeInOut(duration: GlimpseMotion.hoverAnimationDuration)) {
             selectedRange = selectedRange.next
         }
     }
 
     private func cycleDisplayCurrency() {
-        withAnimation(.easeInOut(duration: PerchMotion.hoverAnimationDuration)) {
+        withAnimation(.easeInOut(duration: GlimpseMotion.hoverAnimationDuration)) {
             selectedDisplayCurrency = selectedDisplayCurrency.next
         }
     }
@@ -648,7 +648,7 @@ struct PerchMarketsWidgetView: View {
         let nextIndex = min(max(currentIndex + offset, 0), snapshot.assets.count - 1)
         let nextID = snapshot.assets[nextIndex].id
 
-        withAnimation(PerchMotion.pageTransitionAnimation) {
+        withAnimation(GlimpseMotion.pageTransitionAnimation) {
             selectedAssetID = nextID
             scrollProxy?.scrollTo(nextID, anchor: .center)
         }

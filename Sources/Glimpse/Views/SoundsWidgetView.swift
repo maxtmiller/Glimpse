@@ -1,11 +1,11 @@
 import AppKit
 import SwiftUI
 
-struct PerchSoundsWidgetView: View {
+struct GlimpseSoundsWidgetView: View {
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
-    @Binding var selectedPage: PerchPage
+    @Binding var selectedPage: GlimpsePage
 
     @StateObject private var mediaStore = SystemMediaStore()
     @State private var isHomeButtonHovered = false
@@ -49,14 +49,14 @@ struct PerchSoundsWidgetView: View {
     }
 
     private var playerContent: some View {
-        PerchWidgetChrome(
+        GlimpseWidgetChrome(
             layout: layout,
             isExpanded: isExpanded,
             presentationProgress: presentationProgress,
             leading: {
                 if isExpanded {
                     HStack(spacing: 10) {
-                        PerchSummaryHeader(
+                        GlimpseSummaryHeader(
                             icon: "waveform",
                             title: media?.isPlaying == true ? "Playing" : "Paused",
                             subtitle: "Computer audio",
@@ -65,12 +65,12 @@ struct PerchSoundsWidgetView: View {
                         )
 
                         Spacer(minLength: 0)
-                        PerchNavigationButton(
+                        GlimpseNavigationButton(
                             systemName: "house.fill",
                             title: "Home",
                             isHovered: $isHomeButtonHovered
                         ) {
-                            withAnimation(PerchMotion.pageTransitionAnimation) {
+                            withAnimation(GlimpseMotion.pageTransitionAnimation) {
                                 selectedPage = .home
                             }
                         }
@@ -83,12 +83,12 @@ struct PerchSoundsWidgetView: View {
             trailing: {
                 if isExpanded {
                     HStack(spacing: 10) {
-                        PerchNavigationButton(
+                        GlimpseNavigationButton(
                             systemName: "gearshape.fill",
                             title: "Settings",
                             isHovered: $isSettingsButtonHovered
                         ) {
-                            withAnimation(PerchMotion.pageTransitionAnimation) {
+                            withAnimation(GlimpseMotion.pageTransitionAnimation) {
                                 selectedPage = .settings
                             }
                         }
@@ -96,9 +96,9 @@ struct PerchSoundsWidgetView: View {
 
                         Spacer(minLength: 0)
 
-                        PerchSummaryBadge(text: media?.appName ?? "No audio")
+                        GlimpseSummaryBadge(text: media?.appName ?? "No audio")
                         if let media {
-                            PerchSummaryBadge(text: media.isPlaying ? "Playing" : "Paused")
+                            GlimpseSummaryBadge(text: media.isPlaying ? "Playing" : "Paused")
                         }
                     }
                     .padding(.trailing, 4)

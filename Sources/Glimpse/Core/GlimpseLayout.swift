@@ -1,14 +1,14 @@
 import AppKit
 import SwiftUI
 
-enum PerchGeometry {
+enum GlimpseGeometry {
     static let width: CGFloat = 205
     static let height: CGFloat = 34
     static let lowerCornerRadius: CGFloat = 8
     static let topCornerRadius: CGFloat = 0
 }
 
-enum PerchMotion {
+enum GlimpseMotion {
     static let hoverAnimationDuration: Double = 0.34
     static let pageTransitionAnimation = Animation.spring(response: 0.38, dampingFraction: 0.9, blendDuration: 0.06)
     static let presentationAnimation = Animation.spring(response: 0.46, dampingFraction: 0.86, blendDuration: 0.08)
@@ -32,10 +32,10 @@ struct PanelLayout {
             )
         }
 
-        let hasPerch = screen.safeAreaInsets.top > 0
-        let topBarHeight = hasPerch ? max(PerchGeometry.height + 16, 60) : 60
-        let collapsedWidth = min(max(440, PerchGeometry.width + 260), screen.frame.width - 24)
-        let expandedWidth = min(max(640, PerchGeometry.width + 435), screen.frame.width - 24)
+        let hasGlimpse = screen.safeAreaInsets.top > 0
+        let topBarHeight = hasGlimpse ? max(GlimpseGeometry.height + 16, 60) : 60
+        let collapsedWidth = min(max(440, GlimpseGeometry.width + 260), screen.frame.width - 24)
+        let expandedWidth = min(max(640, GlimpseGeometry.width + 435), screen.frame.width - 24)
 
         return PanelLayout(
             topBarHeight: topBarHeight,

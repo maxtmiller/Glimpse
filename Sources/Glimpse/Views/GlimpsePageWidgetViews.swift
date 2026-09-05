@@ -2,37 +2,53 @@ import AppKit
 import ServiceManagement
 import SwiftUI
 
-struct PerchHomeWidgetView: View {
+struct GlimpseHomeWidgetView: View {
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
-    @Binding var selectedPage: PerchPage
+    @Binding var selectedPage: GlimpsePage
     @StateObject private var batteryMonitor = BatteryMonitor()
     @State private var isSettingsButtonHovered = false
+    @State private var isQuitButtonHovered = false
 
     var body: some View {
-        PerchWidgetChrome(
+        GlimpseWidgetChrome(
             layout: layout,
             isExpanded: isExpanded,
             presentationProgress: presentationProgress,
             leading: {
-                PerchSummaryHeader(
-                    icon: "square.grid.2x2.fill",
-                    title: "Home",
-                    subtitle: "Widgets",
-                    accent: Color.cyan,
-                    showsSubtitle: isExpanded
-                )
+                HStack(spacing: 10) {
+                    GlimpseSummaryHeader(
+                        icon: "square.grid.2x2.fill",
+                        title: "Home",
+                        subtitle: "Widgets",
+                        accent: Color.cyan,
+                        showsSubtitle: isExpanded
+                    )
+
+                    if isExpanded {
+                        Spacer(minLength: 0)
+
+                        GlimpseNavigationButton(
+                            systemName: "power",
+                            title: "Quit Glimpse",
+                            isHovered: $isQuitButtonHovered
+                        ) {
+                            NSApp.terminate(nil)
+                        }
+                        .offset(x: -4)
+                    }
+                }
             },
             trailing: {
                 HStack(spacing: 10) {
                     if isExpanded {
-                        PerchNavigationButton(
+                        GlimpseNavigationButton(
                             systemName: "gearshape.fill",
                             title: "Settings",
                             isHovered: $isSettingsButtonHovered
                         ) {
-                            withAnimation(PerchMotion.pageTransitionAnimation) {
+                            withAnimation(GlimpseMotion.pageTransitionAnimation) {
                                 selectedPage = .settings
                             }
                         }
@@ -48,14 +64,14 @@ struct PerchHomeWidgetView: View {
                 expanded: {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(alignment: .bottom) {
-                        PerchHeader(
+                        GlimpseHeader(
                             title: "Your widgets",
                             subtitle: "Choose an app to take over the panel."
                         )
 
                         Spacer(minLength: 0)
 
-                        Text("\(PerchPage.widgetPages.count) APPS")
+                        Text("\(GlimpsePage.widgetPages.count) APPS")
                             .font(.system(size: 9, weight: .bold, design: .rounded))
                             .foregroundStyle(.white.opacity(0.42))
                             .tracking(0.8)
@@ -68,9 +84,9 @@ struct PerchHomeWidgetView: View {
                         ],
                         spacing: 10
                     ) {
-                        ForEach(PerchPage.widgetPages) { page in
+                        ForEach(GlimpsePage.widgetPages) { page in
                             HomeAppTile(page: page, isSelected: selectedPage == page) {
-                                withAnimation(PerchMotion.pageTransitionAnimation) {
+                                withAnimation(GlimpseMotion.pageTransitionAnimation) {
                                     selectedPage = page
                                 }
                             }
@@ -87,7 +103,7 @@ struct PerchHomeWidgetView: View {
 }
 
 private struct HomeAppTile: View {
-    let page: PerchPage
+    let page: GlimpsePage
     let isSelected: Bool
     let action: () -> Void
     @State private var isHovered = false
@@ -207,24 +223,24 @@ private struct BatteryIndicator: View {
     }
 }
 
-struct PerchPlaceholderWidgetView: View {
-    let page: PerchPage
+struct GlimpsePlaceholderWidgetView: View {
+    let page: GlimpsePage
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
-    @Binding var selectedPage: PerchPage
+    @Binding var selectedPage: GlimpsePage
     let details: [String]
     @State private var isHomeButtonHovered = false
     @State private var isSettingsButtonHovered = false
 
     var body: some View {
-        PerchWidgetChrome(
+        GlimpseWidgetChrome(
             layout: layout,
             isExpanded: isExpanded,
             presentationProgress: presentationProgress,
             leading: {
                 HStack(spacing: 10) {
-                    PerchSummaryHeader(
+                    GlimpseSummaryHeader(
                         icon: page.symbol,
                         title: page.title,
                         subtitle: page.subtitle,
@@ -235,12 +251,12 @@ struct PerchPlaceholderWidgetView: View {
                     if isExpanded {
                         Spacer(minLength: 0)
 
-                        PerchNavigationButton(
+                        GlimpseNavigationButton(
                             systemName: "house.fill",
                             title: "Home",
                             isHovered: $isHomeButtonHovered
                         ) {
-                            withAnimation(PerchMotion.pageTransitionAnimation) {
+                            withAnimation(GlimpseMotion.pageTransitionAnimation) {
                                 selectedPage = .home
                             }
                         }
@@ -251,12 +267,12 @@ struct PerchPlaceholderWidgetView: View {
             trailing: {
                 HStack(spacing: 10) {
                     if isExpanded {
-                        PerchNavigationButton(
+                        GlimpseNavigationButton(
                             systemName: "gearshape.fill",
                             title: "Settings",
                             isHovered: $isSettingsButtonHovered
                         ) {
-                            withAnimation(PerchMotion.pageTransitionAnimation) {
+                            withAnimation(GlimpseMotion.pageTransitionAnimation) {
                                 selectedPage = .settings
                             }
                         }
@@ -266,15 +282,15 @@ struct PerchPlaceholderWidgetView: View {
                     }
 
                     HStack(spacing: 5) {
-                        PerchSummaryBadge(text: badgeOne)
-                        PerchSummaryBadge(text: badgeTwo)
+                        GlimpseSummaryBadge(text: badgeOne)
+                        GlimpseSummaryBadge(text: badgeTwo)
                     }
                 }
                 .padding(.trailing, 4)
             },
             expanded: {
                 VStack(alignment: .leading, spacing: 10) {
-                    PerchHeader(title: page.title, subtitle: page.subtitle)
+                    GlimpseHeader(title: page.title, subtitle: page.subtitle)
 
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(details, id: \.self) { detail in
@@ -316,29 +332,29 @@ struct PerchPlaceholderWidgetView: View {
 
 }
 
-struct PerchSettingsWidgetView: View {
+struct GlimpseSettingsWidgetView: View {
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
-    @Binding var selectedPage: PerchPage
-    let previousPage: PerchPage
+    @Binding var selectedPage: GlimpsePage
+    let previousPage: GlimpsePage
     @State private var isHomeButtonHovered = false
     @State private var isBackButtonHovered = false
-    @AppStorage("perch.defaultPage") private var defaultPageRawValue = PerchPage.sounds.rawValue
-    @AppStorage("perch.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
-    @AppStorage("perch.expandBehavior") private var expandBehaviorRawValue = PerchExpandBehavior.hover.rawValue
+    @AppStorage("glimpse.defaultPage") private var defaultPageRawValue = GlimpsePage.home.rawValue
+    @AppStorage("glimpse.panelAppearance") private var panelAppearanceRawValue = PanelAppearance.solid.rawValue
+    @AppStorage("glimpse.expandBehavior") private var expandBehaviorRawValue = GlimpseExpandBehavior.hover.rawValue
     @State private var launchesAtLogin = false
     @State private var showingResetConfirmation = false
     @State private var settingsMessage: String?
 
     var body: some View {
-        PerchWidgetChrome(
+        GlimpseWidgetChrome(
             layout: layout,
             isExpanded: isExpanded,
             presentationProgress: presentationProgress,
             leading: {
                 HStack(spacing: 10) {
-                    PerchSummaryHeader(
+                    GlimpseSummaryHeader(
                         icon: "gearshape.fill",
                         title: "Settings",
                         subtitle: "Prefs",
@@ -349,12 +365,12 @@ struct PerchSettingsWidgetView: View {
                     if isExpanded {
                         Spacer(minLength: 0)
 
-                        PerchNavigationButton(
+                        GlimpseNavigationButton(
                             systemName: "house.fill",
                             title: "Home",
                             isHovered: $isHomeButtonHovered
                         ) {
-                            withAnimation(PerchMotion.pageTransitionAnimation) {
+                            withAnimation(GlimpseMotion.pageTransitionAnimation) {
                                 selectedPage = .home
                             }
                         }
@@ -365,12 +381,12 @@ struct PerchSettingsWidgetView: View {
             trailing: {
                 HStack(spacing: 10) {
                     if isExpanded {
-                        PerchNavigationButton(
+                        GlimpseNavigationButton(
                             systemName: "arrow.left",
                             title: "Back",
                             isHovered: $isBackButtonHovered
                         ) {
-                            withAnimation(PerchMotion.pageTransitionAnimation) {
+                            withAnimation(GlimpseMotion.pageTransitionAnimation) {
                                 selectedPage = previousPage
                             }
                         }
@@ -380,8 +396,8 @@ struct PerchSettingsWidgetView: View {
                     }
 
                     HStack(spacing: 5) {
-                        PerchSummaryBadge(text: selectedExpandBehavior.title)
-                        PerchSummaryBadge(text: "v\(appVersion)")
+                        GlimpseSummaryBadge(text: selectedExpandBehavior.title)
+                        GlimpseSummaryBadge(text: "v\(appVersion)")
                     }
                 }
                 .padding(.trailing, 4)
@@ -398,14 +414,14 @@ struct PerchSettingsWidgetView: View {
                         ) {
                             settingsToggleRow(
                                 title: "Launch at login",
-                                detail: "Open Perch when you sign in",
+                                detail: "Open Glimpse when you sign in",
                                 isOn: $launchesAtLogin,
                                 action: setLaunchAtLogin
                             )
 
-                            settingsPickerRow(title: "Default widget", detail: "Shown when Perch opens") {
-                                Picker("Default widget", selection: $defaultPageRawValue) {
-                                    ForEach(PerchPage.widgetPages) { page in
+                            settingsPickerRow(title: "Default page", detail: "Shown after the first launch") {
+                                Picker("Default page", selection: $defaultPageRawValue) {
+                                    ForEach(GlimpsePage.startupPages) { page in
                                         Text(page.title).tag(page.rawValue)
                                     }
                                 }
@@ -425,7 +441,7 @@ struct PerchSettingsWidgetView: View {
 
                             settingsPickerRow(title: "Expand behavior", detail: "Hover or click to open") {
                                 Picker("Expand behavior", selection: $expandBehaviorRawValue) {
-                                    ForEach(PerchExpandBehavior.allCases) { behavior in
+                                    ForEach(GlimpseExpandBehavior.allCases) { behavior in
                                         Text(behavior.title).tag(behavior.rawValue)
                                     }
                                 }
@@ -462,7 +478,7 @@ struct PerchSettingsWidgetView: View {
             Button("Reset", role: .destructive, action: resetSettings)
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("This restores the default widget, theme, and launch-at-login setting.")
+            Text("This restores the default page, theme, and launch-at-login setting.")
         }
         .alert("Settings", isPresented: Binding(
             get: { settingsMessage != nil },
@@ -474,8 +490,8 @@ struct PerchSettingsWidgetView: View {
         }
     }
 
-    private var selectedExpandBehavior: PerchExpandBehavior {
-        PerchExpandBehavior(rawValue: expandBehaviorRawValue) ?? .hover
+    private var selectedExpandBehavior: GlimpseExpandBehavior {
+        GlimpseExpandBehavior(rawValue: expandBehaviorRawValue) ?? .hover
     }
 
     private var usesGlassAppearance: Bool {
@@ -492,11 +508,7 @@ struct PerchSettingsWidgetView: View {
     }
 
     private var diagnosticsText: String {
-        "Perch \(appVersion)\nmacOS \(ProcessInfo.processInfo.operatingSystemVersionString)\nDefault widget: \(defaultPage.title)\nLaunch at login: \(launchItemStatus)"
-    }
-
-    private var defaultPage: PerchPage {
-        PerchPage(rawValue: defaultPageRawValue).flatMap { PerchPage.widgetPages.contains($0) ? $0 : nil } ?? .sounds
+        "Glimpse \(appVersion)\nmacOS \(ProcessInfo.processInfo.operatingSystemVersionString)\nStartup page: Home\nLaunch at login: \(launchItemStatus)"
     }
 
     private var launchItemStatus: String {
@@ -524,9 +536,9 @@ struct PerchSettingsWidgetView: View {
     }
 
     private func resetSettings() {
-        defaultPageRawValue = PerchPage.sounds.rawValue
+        defaultPageRawValue = GlimpsePage.home.rawValue
         panelAppearanceRawValue = PanelAppearance.solid.rawValue
-        expandBehaviorRawValue = PerchExpandBehavior.hover.rawValue
+        expandBehaviorRawValue = GlimpseExpandBehavior.hover.rawValue
         setLaunchAtLogin(false)
     }
 
@@ -546,8 +558,8 @@ struct PerchSettingsWidgetView: View {
             ))
         }
 
-        // SwiftUI alerts attach to the perch panel. A native modal alert is
-        // explicitly centered on the main display instead of appearing over the perch.
+        // SwiftUI alerts attach to the glimpse panel. A native modal alert is
+        // explicitly centered on the main display instead of appearing over the glimpse.
         NSApp.activate(ignoringOtherApps: true)
         alert.runModal()
     }
@@ -653,7 +665,7 @@ enum PanelAppearance: String, CaseIterable, Identifiable {
     }
 }
 
-enum PerchExpandBehavior: String, CaseIterable, Identifiable {
+enum GlimpseExpandBehavior: String, CaseIterable, Identifiable {
     case hover
     case click
 

@@ -1,10 +1,10 @@
 import SwiftUI
 
-struct PerchMeetingsWidgetView: View {
+struct GlimpseMeetingsWidgetView: View {
     let layout: PanelLayout
     let isExpanded: Bool
     let presentationProgress: CGFloat
-    @Binding var selectedPage: PerchPage
+    @Binding var selectedPage: GlimpsePage
 
     @StateObject private var controls = MeetingControlsStore()
     @State private var hoveredControl: String?
@@ -12,13 +12,13 @@ struct PerchMeetingsWidgetView: View {
     @State private var isSettingsButtonHovered = false
 
     var body: some View {
-        PerchWidgetChrome(
+        GlimpseWidgetChrome(
             layout: layout,
             isExpanded: isExpanded,
             presentationProgress: presentationProgress,
             leading: {
                 HStack(spacing: 10) {
-                    PerchSummaryHeader(
+                    GlimpseSummaryHeader(
                         icon: "video.fill",
                         title: "Meetings",
                         subtitle: "Mic, camera & audio",
@@ -28,12 +28,12 @@ struct PerchMeetingsWidgetView: View {
 
                     if isExpanded {
                         Spacer(minLength: 0)
-                        PerchNavigationButton(
+                        GlimpseNavigationButton(
                             systemName: "house.fill",
                             title: "Home",
                             isHovered: $isHomeButtonHovered
                         ) {
-                            withAnimation(PerchMotion.pageTransitionAnimation) {
+                            withAnimation(GlimpseMotion.pageTransitionAnimation) {
                                 selectedPage = .home
                             }
                         }
@@ -44,12 +44,12 @@ struct PerchMeetingsWidgetView: View {
             trailing: {
                 HStack(spacing: isExpanded ? 10 : 5) {
                     if isExpanded {
-                        PerchNavigationButton(
+                        GlimpseNavigationButton(
                             systemName: "gearshape.fill",
                             title: "Settings",
                             isHovered: $isSettingsButtonHovered
                         ) {
-                            withAnimation(PerchMotion.pageTransitionAnimation) {
+                            withAnimation(GlimpseMotion.pageTransitionAnimation) {
                                 selectedPage = .settings
                             }
                         }
@@ -58,13 +58,13 @@ struct PerchMeetingsWidgetView: View {
                         Spacer(minLength: 0)
                     }
 
-                    PerchSummaryBadge(text: statusText)
+                    GlimpseSummaryBadge(text: statusText)
                 }
                 .padding(.trailing, 4)
             },
             expanded: {
                 VStack(alignment: .leading, spacing: 11) {
-                    PerchHeader(
+                    GlimpseHeader(
                         title: "Meeting controls",
                         subtitle: "Mic, camera & audio at a glance"
                     )

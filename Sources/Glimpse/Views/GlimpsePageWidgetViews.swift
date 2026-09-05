@@ -20,10 +20,11 @@ struct GlimpseHomeWidgetView: View {
                 HStack(spacing: 10) {
                     GlimpseSummaryHeader(
                         icon: "square.grid.2x2.fill",
-                        title: "Home",
-                        subtitle: "Widgets",
+                        title: "Glimpse",
+                        subtitle: "Home",
                         accent: Color.cyan,
-                        showsSubtitle: isExpanded
+                        showsSubtitle: isExpanded,
+                        logoImage: NSApp.applicationIconImage
                     )
 
                     if isExpanded {

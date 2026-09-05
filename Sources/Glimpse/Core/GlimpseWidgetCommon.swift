@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct InteractiveButtonStyle: ButtonStyle {
@@ -103,6 +104,7 @@ struct GlimpseSummaryHeader: View {
     let subtitle: String
     let accent: Color
     var showsSubtitle: Bool = true
+    var logoImage: NSImage? = nil
     var iconAction: (() -> Void)? = nil
     var iconHelp: String? = nil
     @State private var isIconHovered = false
@@ -127,9 +129,16 @@ struct GlimpseSummaryHeader: View {
                         .shadow(color: .black.opacity(0.22), radius: 3, y: 1)
                         .scaleEffect(isIconHovered ? 1.04 : 1)
 
-                    Image(systemName: icon)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
+                    if let logoImage {
+                        Image(nsImage: logoImage)
+                            .resizable()
+                            .scaledToFit()
+                            .padding(5)
+                    } else {
+                        Image(systemName: icon)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.white)
+                    }
                 }
 
                 if let iconAction {

@@ -108,14 +108,12 @@ final class SystemMediaStore: ObservableObject {
             }
             let playing = results.first(where: { $0.snapshot.isPlaying })
             let browserResult = results.first(where: { $0.player.isBrowser })
-            let activeAudioSource = self?.readActiveAudioSource()
-            let result = playing ?? browserResult ?? (activeAudioSource == nil ? results.first : nil)
+            let result = playing ?? browserResult ?? results.first
 
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.activePlayer = result?.player
                 self.snapshot = result?.snapshot
-                    ?? activeAudioSource.map(self.genericSnapshot)
                 if result?.player == .spotify, let snapshot = result?.snapshot {
                     self.recordSpotifyTrack(snapshot)
                 }
@@ -228,75 +226,6 @@ final class SystemMediaStore: ObservableObject {
             isPlaying: isPlaying,
             position: max(0, position),
             duration: max(0, duration),
-            updatedAt: Date(),
-            spotifyURI: nil
-        )
-    }
-
-    private func readActiveAudioSource() -> RunningAudioSource? {
-        guard #available(macOS 15.0, *) else { return nil }
-        guard let processes = try? AudioHardwareSystem.shared.processes else { return nil }
-
-        let browserBundleIDs = [
-            "com.google.Chrome",
-            "com.apple.Safari",
-            "org.mozilla.firefox",
-            "com.microsoft.edgemac",
-            "com.brave.Browser",
-            "com.vivaldi.Vivaldi",
-            "com.operasoftware.Opera"
-        ]
-        let metadataPlayerBundleIDs = ["com.spotify.client", "com.apple.Music"]
-
-        let runningProcesses = processes.compactMap { process -> RunningAudioSource? in
-            guard let pid = try? process.pid,
-                  pid != ProcessInfo.processInfo.processIdentifier,
-                  (try? process.isRunningOutput) == true,
-                  let application = NSRunningApplication(processIdentifier: pid),
-                  let bundleIdentifier = application.bundleIdentifier
-            else { return nil }
-
-            return RunningAudioSource(
-                appName: Self.displayName(for: bundleIdentifier, fallback: application.localizedName ?? bundleIdentifier),
-                bundleIdentifier: bundleIdentifier,
-                appIcon: application.icon
-            )
-        }
-
-        let browserSource = runningProcesses.first(where: { source in
-            browserBundleIDs.contains(where: { source.bundleIdentifier == $0 || source.bundleIdentifier.hasPrefix("\($0).") })
-        })
-
-        return browserSource
-            ?? runningProcesses.first(where: { source in
-                !metadataPlayerBundleIDs.contains(source.bundleIdentifier)
-                    && !source.bundleIdentifier.hasPrefix("com.apple.audio")
-            })
-    }
-
-    private static func displayName(for bundleIdentifier: String, fallback: String) -> String {
-        if bundleIdentifier.hasPrefix("com.google.Chrome") { return "Google Chrome" }
-        if bundleIdentifier.hasPrefix("com.apple.Safari") { return "Safari" }
-        if bundleIdentifier.hasPrefix("org.mozilla.firefox") { return "Firefox" }
-        if bundleIdentifier.hasPrefix("com.microsoft.edgemac") { return "Microsoft Edge" }
-        if bundleIdentifier.hasPrefix("com.brave.Browser") { return "Brave" }
-        if bundleIdentifier.hasPrefix("com.vivaldi.Vivaldi") { return "Vivaldi" }
-        if bundleIdentifier.hasPrefix("com.operasoftware.Opera") { return "Opera" }
-        return fallback
-    }
-
-    private func genericSnapshot(for source: RunningAudioSource) -> SystemMediaSnapshot {
-        SystemMediaSnapshot(
-            title: "Audio detected",
-            artist: source.appName,
-            album: "",
-            appName: source.appName,
-            appBundleIdentifier: source.bundleIdentifier,
-            appColor: .systemBlue,
-            artwork: source.appIcon,
-            isPlaying: true,
-            position: 0,
-            duration: 0,
             updatedAt: Date(),
             spotifyURI: nil
         )
@@ -507,10 +436,4 @@ private enum MediaPlayer: CaseIterable, Equatable {
         case .safari: return .systemBlue
         }
     }
-}
-
-private struct RunningAudioSource {
-    let appName: String
-    let bundleIdentifier: String
-    let appIcon: NSImage?
 }

@@ -1,10 +1,10 @@
 import AppKit
-import CoreLocation
+@preconcurrency import CoreLocation
 import Foundation
 import SwiftUI
 
 @MainActor
-final class WeatherStore: NSObject, ObservableObject, @preconcurrency CLLocationManagerDelegate {
+final class WeatherStore: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published private(set) var snapshot: WeatherSnapshot = .placeholder
 
     private let locationManager = CLLocationManager()

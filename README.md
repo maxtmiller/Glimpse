@@ -8,7 +8,7 @@
 
 ## Demo
 
-<video src="https://github.com/user-attachments/assets/0e02cdd6-3033-4324-b1eb-4680ab1bffad" width="600" controls>
+<video src="https://github.com/user-attachments/assets/a729978e-3e82-47a4-8f09-b99d012482f7" width="600" controls>
     Your browser does not support the video tag.
 </video>
 

@@ -1,79 +1,53 @@
 # Perch
 
-Glanceable macOS information and control panel built with SwiftUI and AppKit.
+![Swift](https://img.shields.io/badge/Swift-F05138?style=flat&logo=swift&logoColor=white) ![SwiftUI](https://img.shields.io/badge/SwiftUI-007AFF?style=flat&logo=swift&logoColor=white) ![macOS](https://img.shields.io/badge/macOS-13%2B-000000?style=flat&logo=apple&logoColor=white)
 
-## What it does
+**A glanceable macOS information and control panel that lives at the top of your screen.**
 
-- Shows a floating panel centered near the top of your main display
-- Opens to a home page with Weather, Markets, Playing, and Meetings widgets
-- Loads market quotes and intraday chart data from Yahoo Finance without an API key; keeps sample data as a fallback
-- Expands on hover to show extra market or weather details
-- Pulls live location and weather data from Open-Meteo after you approve location access
-- Shows current temperature, feels-like temperature, humidity, rain chance, wind, daily high/low, and an hourly forecast graph
-- Supports one-, three-, seven-, and sixteen-day weather forecast ranges; the graph can show temperature, feels-like temperature, humidity, rain chance, or wind
-- Shows live playback from Music or Spotify, including the source app and playback controls
-- Provides a Meetings widget for default microphone mute and speaker deafen controls, microphone activity, and camera status
-- Shows the frontmost app and selectable audio devices
+---
 
-## Run it
+## Preview
 
-Requirements:
 
-- macOS 13 or newer
-- Xcode 15+ or the macOS Swift toolchain
-- A real macOS app bundle if you want the location prompt to appear reliably
 
-From a fresh clone:
+## Features
 
-```bash
-git clone https://github.com/YOUR_USERNAME/Perch.git
-cd Perch
-```
+* **Floating Panel:** Keeps Weather, Markets, Playing, and Meetings available near the top of your main display.
+* **Local Weather:** Shows temperature, feels-like temperature, humidity, rain chance, wind, daily high/low, and hourly forecasts using Open-Meteo.
+* **Market Data:** Displays live quotes and intraday charts from Yahoo Finance, with sample data available as a fallback.
+* **Media Controls:** Shows Music and Spotify playback, including the source app and playback controls.
+* **Meeting Controls:** Provides microphone mute, speaker deafen, microphone activity, and camera status controls.
+* **System Awareness:** Shows the frontmost app and lets you select audio devices.
 
-Swift Package Manager will resolve the `SkyLightWindow` dependency automatically. To run the executable directly from source:
+## Setup
+
+### 1. Download Perch
+
+Perch requires macOS 13 or newer. Download the latest `Perch.dmg` from the [GitHub Releases page](../../releases).
+
+### 2. Install the App
+
+* Open the downloaded DMG.
+* Drag `Perch.app` into your **Applications** folder.
+
+### 3. Open Perch
+
+The current release is unsigned, so macOS may show an unidentified-developer warning the first time:
+
+* Open **Applications** in Finder.
+* Control-click `Perch.app` and choose **Open**.
+* Confirm the macOS security prompt.
+
+This confirmation is normally required only on the first launch.
+
+> 💡 **Tip:** Perch may request location, microphone, camera, and media-control permissions. Approve the permissions needed for the widgets you want to use. If location access was denied, re-enable it under **System Settings → Privacy & Security → Location Services**.
+
+## Development
+
+Open `Package.swift` in Xcode and press **Run**, or run the executable directly:
 
 ```bash
 swift run Perch
 ```
 
-That launches the panel directly.
-
-If `swift run` reports a toolchain or SDK mismatch, open the package in Xcode instead and press Run. That is the normal path for macOS app previewing and avoids command-line toolchain issues.
-
-To bundle and launch a real `.app` with the location usage strings included:
-
-```bash
-CONFIGURATION=release ./scripts/bundle-macos-app.sh
-```
-
-That creates `.build/Perch.app` and opens it. To install it locally, drag the app into `/Applications`.
-
-The bundler converts `Assets/perch-icon.png` into the app’s `AppIcon.icns` automatically. The source icon should remain a square PNG; the current 1000×1000 RGBA asset is supported.
-
-To create a shareable DMG without signing or notarization:
-
-```bash
-mkdir -p .build/Perch-dmg
-cp -R .build/Perch.app .build/Perch-dmg/
-ln -s /Applications .build/Perch-dmg/Applications
-hdiutil create -volname "Perch" -srcfolder .build/Perch-dmg -ov -format UDZO Perch.dmg
-```
-
-Unsigned builds may trigger an “unidentified developer” warning. Users can Control-click the app, choose **Open**, and confirm the warning.
-
-If the app has not been granted location access yet, click the cloud icon to request access again. If you denied access previously, macOS will send you to System Settings so you can re-enable it there.
-
-The Playing widget reads Music and Spotify through macOS Apple Events. The first time you use it, macOS may ask you to allow Perch to control the selected media app. Use the bundled `.app` flow above so the permission description is available.
-
-## Preview in Xcode
-
-1. Open the repository in Xcode by opening `Package.swift`.
-2. Open `Sources/Perch/PerchView.swift`.
-3. Use the SwiftUI preview canvas on the `#Preview` block.
-
-## Notes
-
-- The live weather data comes from Open-Meteo, so no WeatherKit entitlement is required. Weather uses hourly precipitation probability for the Rain metric; Open-Meteo also provides rain and total precipitation amounts if more detailed precipitation reporting is added later.
-- Weather refreshes automatically every 10 minutes and can be refreshed manually from the weather icon.
-- Market data is fetched from Yahoo Finance every 60 seconds. Yahoo data can be delayed depending on the exchange, and its public endpoints are intended for personal use.
-- The bundle script packages the executable and usage strings so the location prompt works from a real `.app`.
+Developer release and DMG packaging instructions are kept in [`AGENTS.md`](AGENTS.md).

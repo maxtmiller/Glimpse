@@ -113,31 +113,35 @@ struct GlimpseSummaryHeader: View {
         HStack(alignment: .center, spacing: 10) {
             Group {
                 let iconView = ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [accent.opacity(0.78), accent.opacity(0.48)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 28, height: 28)
-                        .overlay(
-                            Circle()
-                                .stroke(isIconHovered ? Color.white.opacity(0.34) : Color.white.opacity(0.12), lineWidth: 1)
-                        )
-                        .shadow(color: .black.opacity(0.22), radius: 3, y: 1)
-                        .scaleEffect(isIconHovered ? 1.04 : 1)
-
                     if let logoImage {
                         Image(nsImage: logoImage)
                             .resizable()
                             .scaledToFit()
-                            .padding(5)
+                            .frame(width: 28, height: 28)
+                            .shadow(color: .black.opacity(0.22), radius: 3, y: 1)
+                            .scaleEffect(isIconHovered ? 1.04 : 1)
                     } else {
-                        Image(systemName: icon)
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white)
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [accent.opacity(0.78), accent.opacity(0.48)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 28, height: 28)
+                                .overlay(
+                                    Circle()
+                                        .stroke(isIconHovered ? Color.white.opacity(0.34) : Color.white.opacity(0.12), lineWidth: 1)
+                                )
+                                .shadow(color: .black.opacity(0.22), radius: 3, y: 1)
+                                .scaleEffect(isIconHovered ? 1.04 : 1)
+
+                            Image(systemName: icon)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.white)
+                        }
                     }
                 }
 

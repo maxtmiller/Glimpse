@@ -41,7 +41,7 @@ enum GlimpsePage: String, CaseIterable, Identifiable {
         case .weather: return "Current conditions"
         case .markets: return "Market dashboard"
         case .sounds: return "Computer audio"
-        case .meetings: return "Mic, camera & audio"
+        case .meetings: return "Mic & audio"
         case .tokenSpend: return "Usage scaffold"
         case .settings: return "Panel preferences"
         }

@@ -24,7 +24,7 @@ struct GlimpseMeetingsWidgetView: View {
                     GlimpseSummaryHeader(
                         icon: "video.fill",
                         title: "Meetings",
-                        subtitle: "Mic, camera & audio",
+                        subtitle: "Mic & audio",
                         accent: .red,
                         showsSubtitle: isExpanded
                     )
@@ -69,7 +69,7 @@ struct GlimpseMeetingsWidgetView: View {
                 VStack(alignment: .leading, spacing: 11) {
                     GlimpseHeader(
                         title: "Meeting controls",
-                        subtitle: "Mic, camera & audio at a glance"
+                        subtitle: "Mic & audio at a glance"
                     )
 
                     HStack(spacing: 8) {

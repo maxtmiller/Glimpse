@@ -16,7 +16,7 @@
 * **Local Weather:** Shows temperature, feels-like temperature, humidity, rain chance, wind, daily high/low, and hourly forecasts using Open-Meteo.
 * **Market Data:** Displays live quotes and intraday charts from Yahoo Finance, with sample data available as a fallback.
 * **Media Controls:** Shows Music and Spotify playback, including the source app and playback controls.
-* **Meeting Controls:** Provides microphone mute, speaker deafen, microphone activity, and camera status controls.
+* **Meeting Controls:** Provides microphone mute, speaker deafen, microphone activity, and audio device controls.
 * **System Awareness:** Shows the frontmost app and lets you select audio devices.
 
 ## Setup
@@ -40,7 +40,7 @@ The current release is unsigned, so macOS may show an unidentified-developer war
 
 This confirmation is normally required only on the first launch.
 
-> 💡 **Tip:** Glimpse may request location, microphone, camera, and media-control permissions. Approve the permissions needed for the widgets you want to use. If location access was denied, re-enable it under **System Settings → Privacy & Security → Location Services**.
+> 💡 **Tip:** Glimpse may request location, microphone, and media-control permissions. Approve the permissions needed for the widgets you want to use. If location access was denied, re-enable it under **System Settings → Privacy & Security → Location Services**.
 
 ## Development
 

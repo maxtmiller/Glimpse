@@ -7,10 +7,8 @@ import CoreAudio
 
 /// Controls the default input and output devices used by every application.
 ///
-/// macOS does not expose a public API that can revoke another application's
-/// camera capture session. The widget can report camera activity and open
-/// the privacy settings, while the microphone and speaker controls below
-/// are applied to Core Audio devices.
+/// The microphone and speaker controls below are applied to Core Audio
+/// devices.
 final class MeetingControlsStore: ObservableObject {
     struct AudioDevice: Identifiable, Equatable {
         let id: AudioDeviceID
@@ -26,7 +24,6 @@ final class MeetingControlsStore: ObservableObject {
     @Published private(set) var outputDevices: [AudioDevice] = []
     @Published private(set) var selectedInputID: AudioDeviceID?
     @Published private(set) var selectedOutputID: AudioDeviceID?
-    @Published private(set) var cameraInUse = false
     @Published private(set) var microphoneLevel: Float = 0
 
     private var refreshTimer: Timer?
@@ -85,24 +82,6 @@ final class MeetingControlsStore: ObservableObject {
         inputName = input.flatMap(deviceName) ?? "No microphone"
         outputName = output.flatMap(deviceName) ?? "No speakers"
         outputVolume = output.flatMap(volume) ?? 0
-        cameraInUse = discoveredVideoDevices().contains { $0.isInUseByAnotherApplication }
-    }
-
-    private func discoveredVideoDevices() -> [AVCaptureDevice] {
-        var deviceTypes: [AVCaptureDevice.DeviceType] = [
-            .builtInWideAngleCamera,
-            .externalUnknown
-        ]
-
-        if #available(macOS 14.0, *) {
-            deviceTypes.append(.continuityCamera)
-        }
-
-        return AVCaptureDevice.DiscoverySession(
-            deviceTypes: deviceTypes,
-            mediaType: .video,
-            position: .unspecified
-        ).devices
     }
 
     private func startMicrophoneMeter() {

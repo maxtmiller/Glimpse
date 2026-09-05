@@ -5,7 +5,6 @@ final class GlimpsePageTests: XCTestCase {
     func testWidgetPagesExcludeNonWidgetPages() {
         XCTAssertFalse(GlimpsePage.widgetPages.contains(.home))
         XCTAssertFalse(GlimpsePage.widgetPages.contains(.settings))
-        XCTAssertFalse(GlimpsePage.widgetPages.contains(.tokenSpend))
         XCTAssertTrue(GlimpsePage.widgetPages.contains(.weather))
         XCTAssertTrue(GlimpsePage.widgetPages.contains(.markets))
     }

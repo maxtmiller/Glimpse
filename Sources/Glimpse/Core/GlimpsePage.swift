@@ -6,18 +6,17 @@ enum GlimpsePage: String, CaseIterable, Identifiable {
     case markets
     case sounds
     case meetings
-    case tokenSpend
     case settings
 
     static var widgetPages: [GlimpsePage] {
         allCases.filter { page in
-            page != .home && page != .settings && page != .tokenSpend
+            page != .home && page != .settings
         }
     }
 
     static var startupPages: [GlimpsePage] {
         allCases.filter { page in
-            page != .settings && page != .tokenSpend
+            page != .settings
         }
     }
 
@@ -30,7 +29,6 @@ enum GlimpsePage: String, CaseIterable, Identifiable {
         case .markets: return "Markets"
         case .sounds: return "Playing"
         case .meetings: return "Meetings"
-        case .tokenSpend: return "Token Spend"
         case .settings: return "Settings"
         }
     }
@@ -42,7 +40,6 @@ enum GlimpsePage: String, CaseIterable, Identifiable {
         case .markets: return "Market dashboard"
         case .sounds: return "Computer audio"
         case .meetings: return "Mic & audio"
-        case .tokenSpend: return "Usage scaffold"
         case .settings: return "Panel preferences"
         }
     }
@@ -54,7 +51,6 @@ enum GlimpsePage: String, CaseIterable, Identifiable {
         case .markets: return "chart.line.uptrend.xyaxis"
         case .sounds: return "waveform"
         case .meetings: return "video.fill"
-        case .tokenSpend: return "chart.pie.fill"
         case .settings: return "gearshape.fill"
         }
     }
@@ -66,7 +62,6 @@ enum GlimpsePage: String, CaseIterable, Identifiable {
         case .markets: return Color.green
         case .sounds: return Color.purple
         case .meetings: return Color.red
-        case .tokenSpend: return Color.blue
         case .settings: return Color.white.opacity(0.9)
         }
     }

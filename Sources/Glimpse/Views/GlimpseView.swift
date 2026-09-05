@@ -135,20 +135,6 @@ struct GlimpseView: View {
                     selectedPage: $selectedPage
                 )
                 .transition(pageSwapTransition)
-            case .tokenSpend:
-                GlimpsePlaceholderWidgetView(
-                    page: .tokenSpend,
-                    layout: layout,
-                    isExpanded: isExpanded,
-                    presentationProgress: presentationProgress,
-                    selectedPage: $selectedPage,
-                    details: [
-                        "Daily Anthropic spend",
-                        "Model mix by project",
-                        "Budget thresholds and alerts"
-                    ]
-                )
-                .transition(pageSwapTransition)
             case .settings:
                 GlimpseSettingsWidgetView(
                     layout: layout,

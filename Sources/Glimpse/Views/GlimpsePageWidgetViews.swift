@@ -317,7 +317,6 @@ struct GlimpsePlaceholderWidgetView: View {
     private var badgeOne: String {
         switch page {
         case .markets: return "AAPL"
-        case .tokenSpend: return "Anthropic"
         default: return page.title
         }
     }
@@ -325,7 +324,6 @@ struct GlimpsePlaceholderWidgetView: View {
     private var badgeTwo: String {
         switch page {
         case .markets: return "MSFT"
-        case .tokenSpend: return "Today"
         default: return "More"
         }
     }

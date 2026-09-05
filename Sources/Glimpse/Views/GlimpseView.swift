@@ -205,7 +205,7 @@ struct GlimpseView: View {
                 ),
                 style: .continuous
             )
-            .fill(.black.opacity(0.16))
+            .fill(.black)
             // .padding(.horizontal, 1) // 1px visual padding on sides
             // .padding(.bottom, 1)     // 1px visual padding on bottom
             .frame(width: GlimpseGeometry.width, height: GlimpseGeometry.height, alignment: .top)

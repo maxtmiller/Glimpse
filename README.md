@@ -6,18 +6,19 @@
 
 ---
 
-## Preview
+## Demo
 
-
+<video src="https://github.com/user-attachments/assets/0e02cdd6-3033-4324-b1eb-4680ab1bffad" width="600" controls>
+    Your browser does not support the video tag.
+</video>
 
 ## Features
 
-* **Floating Panel:** Keeps Weather, Markets, Playing, and Meetings available near the top of your main display.
 * **Local Weather:** Shows temperature, feels-like temperature, humidity, rain chance, wind, daily high/low, and hourly forecasts using Open-Meteo.
 * **Market Data:** Displays live quotes and intraday charts from Yahoo Finance, or a clear unavailable state when data cannot be loaded.
 * **Media Controls:** Shows Music and Spotify playback, including the source app and playback controls.
 * **Meeting Controls:** Provides microphone mute, speaker deafen, microphone activity, and audio device controls.
-* **System Awareness:** Shows the frontmost app and lets you select audio devices.
+* **System Awareness:** Shows the frontmost app and its current context.
 
 ## Setup
 

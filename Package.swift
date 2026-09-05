@@ -20,6 +20,11 @@ let package = Package(
                 .product(name: "SkyLightWindow", package: "SkyLightWindow")
             ],
             path: "Sources/Glimpse"
+        ),
+        .testTarget(
+            name: "GlimpseTests",
+            dependencies: ["Glimpse"],
+            path: "Tests/GlimpseTests"
         )
     ]
 )

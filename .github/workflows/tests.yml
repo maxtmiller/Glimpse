@@ -1,0 +1,23 @@
+name: Tests
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Swift tests
+    runs-on: macos-14
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run tests
+        run: |
+          DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
+          swift test

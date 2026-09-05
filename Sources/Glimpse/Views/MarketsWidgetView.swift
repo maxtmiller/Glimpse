@@ -199,6 +199,10 @@ struct MarketAsset: Identifiable {
 
     func rangeMetrics(for range: MarketTimeRange, displayCurrency: MarketDisplayCurrency) -> MarketAssetRangeMetrics {
         let values = sparkline(for: range)
+        guard !values.isEmpty || dayHigh != 0 || dayLow != 0 else {
+            return MarketAssetRangeMetrics(highLabel: "—", lowLabel: "—", volumeLabel: volumeLabel)
+        }
+
         let highValue = values.max() ?? dayHigh
         let lowValue = values.min() ?? dayLow
 

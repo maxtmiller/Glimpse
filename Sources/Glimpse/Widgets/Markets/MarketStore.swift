@@ -52,6 +52,7 @@ final class MarketStore: ObservableObject {
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     self?.errorMessage = error.localizedDescription
+                    self?.snapshot = .empty
                     self?.isLoading = false
                 }
             }

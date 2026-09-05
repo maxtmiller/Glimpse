@@ -71,48 +71,6 @@ struct WeatherSnapshot {
         return city == "Location unavailable" ? "Loc" : city
     }
 
-    static let sample: WeatherSnapshot = {
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: Date())
-        let nowHour = calendar.component(.hour, from: Date())
-
-        let hourly = (0...24).map { hour in
-            let date = calendar.date(byAdding: .hour, value: hour, to: startOfDay) ?? startOfDay
-            let temperature = sampleTemperature(for: hour)
-            let symbol = sampleSymbol(for: hour, temperature: temperature)
-            return HourlyForecast(
-                date: date,
-                hour: hourLabel(for: date),
-                symbol: symbol,
-                temperature: temperature,
-                feelsLike: temperature + (hour % 3 == 0 ? 2 : 1),
-                humidity: sampleHumidity(for: hour),
-                rainChance: hour >= 17 && hour <= 19 ? 45 : 8,
-                wind: sampleWind(for: hour),
-                windDirectionDegrees: sampleWindDirection(for: hour),
-                isCurrentHour: hour == nowHour
-            )
-        }
-
-        return WeatherSnapshot(
-            hasLiveData: true,
-            city: "San Francisco",
-            region: "CA",
-            country: "US",
-            condition: "Partly Cloudy",
-            symbol: "cloud.sun.fill",
-            temperature: 72,
-            feelsLike: 74,
-            high: 76,
-            low: 61,
-            humidity: 58,
-            rainChance: 8,
-            wind: 9,
-            hourly: hourly,
-            timeZoneIdentifier: calendar.timeZone.identifier
-        )
-    }()
-
     static let placeholder = WeatherSnapshot(
         hasLiveData: false,
         city: "Location unavailable",
@@ -206,49 +164,4 @@ struct WeatherSnapshot {
         )
     }
 
-    private static func hourLabel(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-        formatter.dateFormat = "ha"
-        return formatter.string(from: date).lowercased().replacingOccurrences(of: " ", with: "")
-    }
-
-    private static func sampleTemperature(for hour: Int) -> Int {
-        let phase = Double(hour) / 24.0
-        let baseline = 69.0
-        let swing = 6.0 * sin((phase * 2.0 * .pi) - (.pi / 2.0))
-        let secondary = 1.5 * sin((phase * 4.0 * .pi) + 0.8)
-        return Int((baseline + swing + secondary).rounded())
-    }
-
-    private static func sampleSymbol(for hour: Int, temperature: Int) -> String {
-        switch hour {
-        case 0...5:
-            return temperature < 64 ? "cloud.moon.fill" : "moon.stars.fill"
-        case 6...10:
-            return "cloud.sun.fill"
-        case 11...15:
-            return "sun.max.fill"
-        case 16...19:
-            return "cloud.sun.fill"
-        default:
-            return "cloud.moon.fill"
-        }
-    }
-
-    private static func sampleHumidity(for hour: Int) -> Int {
-        let cycle = sin((Double(hour) / 24.0) * 2.0 * .pi)
-        return Int((58.0 + (cycle * 10.0)).rounded())
-    }
-
-    private static func sampleWind(for hour: Int) -> Int {
-        let cycle = sin((Double(hour) / 24.0) * 4.0 * .pi + 0.7)
-        return max(4, Int((7.0 + (cycle * 2.5)).rounded()))
-    }
-
-    private static func sampleWindDirection(for hour: Int) -> Int {
-        let directions = [0, 45, 90, 135, 180, 225, 270, 315]
-        return directions[hour % directions.count]
-    }
 }

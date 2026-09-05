@@ -108,7 +108,7 @@ final class WeatherStore: NSObject, ObservableObject, @preconcurrency CLLocation
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        // Keep the current placeholder or last good snapshot visible if lookup fails.
+        snapshot = .placeholder
     }
 
     private func loadWeather(for location: CLLocation) async {
@@ -167,6 +167,14 @@ final class WeatherStore: NSObject, ObservableObject, @preconcurrency CLLocation
             }
         } catch {
             print("OpenMeteoWeatherService refresh failed: \(error)")
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 0.35)) {
+                snapshot = WeatherSnapshot.weatherUnavailable(
+                    city: context.city,
+                    region: context.region,
+                    country: context.country
+                )
+            }
         }
     }
 

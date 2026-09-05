@@ -1,5 +1,5 @@
 import AppKit
-@preconcurrency import CoreLocation
+import CoreLocation
 import Foundation
 import SwiftUI
 
@@ -86,29 +86,36 @@ final class WeatherStore: NSObject, ObservableObject, CLLocationManagerDelegate 
         }
     }
 
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        switch manager.authorizationStatus {
-        case .authorized, .authorizedAlways:
-            requestCurrentLocation()
-        case .denied, .restricted, .notDetermined:
-            break
-        @unknown default:
-            break
+    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let status = manager.authorizationStatus
+        Task { @MainActor [weak self] in
+            switch status {
+            case .authorized, .authorizedAlways:
+                self?.requestCurrentLocation()
+            case .denied, .restricted, .notDetermined:
+                break
+            @unknown default:
+                break
+            }
         }
     }
 
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
 
-        weatherTask?.cancel()
-        weatherTask = Task { [weak self] in
-            guard let self else { return }
-            await self.loadWeather(for: location)
+        Task { @MainActor [weak self] in
+            self?.weatherTask?.cancel()
+            self?.weatherTask = Task { [weak self] in
+                guard let self else { return }
+                await self.loadWeather(for: location)
+            }
         }
     }
 
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        snapshot = .placeholder
+    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        Task { @MainActor [weak self] in
+            self?.snapshot = .placeholder
+        }
     }
 
     private func loadWeather(for location: CLLocation) async {

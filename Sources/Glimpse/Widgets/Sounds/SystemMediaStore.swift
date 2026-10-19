@@ -32,6 +32,24 @@ final class SystemMediaStore: ObservableObject {
     private var pollTimer: Timer?
     private var activePlayer: MediaPlayer?
     private var isPolling = false
+    private var isPanelHidden = false
+    private var presentationObserver: NSObjectProtocol?
+
+    // Compiling an NSAppleScript triggers an XProtect scan, so read scripts
+    // are compiled once and reused. Only touched from the serialized refresh path.
+    private var scriptCache: [String: NSAppleScript] = [:]
+    private var artworkCache: (key: String, image: NSImage?)?
+
+    deinit {
+        stop()
+    }
+
+    private func cachedScript(_ source: String) -> NSAppleScript? {
+        if let script = scriptCache[source] { return script }
+        guard let script = NSAppleScript(source: source) else { return nil }
+        scriptCache[source] = script
+        return script
+    }
 
     func start() {
         guard pollTimer == nil else {
@@ -39,16 +57,37 @@ final class SystemMediaStore: ObservableObject {
             return
         }
 
-        refresh()
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            self?.refresh()
+        presentationObserver = NotificationCenter.default.addObserver(
+            forName: .glimpsePresentationStateDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self else { return }
+            let wasHidden = isPanelHidden
+            isPanelHidden = notification.userInfo?["state"] as? String == "hidden"
+            if wasHidden && !isPanelHidden {
+                refresh()
+            }
         }
+
+        refresh()
+        // Every poll compiles AppleScript, which triggers an XProtect scan,
+        // so keep this slow and skip it while nothing is on screen.
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
+            guard let self, !isPanelHidden else { return }
+            refresh()
+        }
+        pollTimer?.tolerance = 0.5
         RunLoop.main.add(pollTimer!, forMode: .common)
     }
 
     func stop() {
         pollTimer?.invalidate()
         pollTimer = nil
+        if let presentationObserver {
+            NotificationCenter.default.removeObserver(presentationObserver)
+        }
+        presentationObserver = nil
     }
 
     func togglePlayback() {
@@ -103,8 +142,13 @@ final class SystemMediaStore: ObservableObject {
         isPolling = true
 
         DispatchQueue.global(qos: .utility).async { [weak self] in
-            let results = MediaPlayer.allCases.compactMap { player in
-                self?.readSnapshot(for: player)
+            // Players are ordered by priority, so stop at the first one that is
+            // playing and skip the expensive browser tab scans.
+            var results: [(player: MediaPlayer, snapshot: SystemMediaSnapshot)] = []
+            for player in MediaPlayer.allCases {
+                guard let result = self?.readSnapshot(for: player) else { continue }
+                results.append(result)
+                if result.snapshot.isPlaying { break }
             }
             let playing = results.first(where: { $0.snapshot.isPlaying })
             let browserResult = results.first(where: { $0.player.isBrowser })
@@ -143,7 +187,7 @@ final class SystemMediaStore: ObservableObject {
         end tell
         """
         var accessError: NSDictionary?
-        guard NSAppleScript(source: accessScript)?.executeAndReturnError(&accessError) != nil else {
+        guard cachedScript(accessScript)?.executeAndReturnError(&accessError) != nil else {
             if let accessError {
                 print("Chrome automation access failed: \(accessError)")
             }
@@ -167,7 +211,7 @@ final class SystemMediaStore: ObservableObject {
         """
 
         var error: NSDictionary?
-        guard let result = NSAppleScript(source: script)?.executeAndReturnError(&error),
+        guard let result = cachedScript(script)?.executeAndReturnError(&error),
               let value = result.stringValue
         else { return nil }
 
@@ -190,7 +234,7 @@ final class SystemMediaStore: ObservableObject {
         """
 
         var error: NSDictionary?
-        guard let result = NSAppleScript(source: script)?.executeAndReturnError(&error),
+        guard let result = cachedScript(script)?.executeAndReturnError(&error),
               let value = result.stringValue
         else { return nil }
 
@@ -232,6 +276,11 @@ final class SystemMediaStore: ObservableObject {
     }
 
     private func readSnapshot(for player: MediaPlayer) -> (player: MediaPlayer, snapshot: SystemMediaSnapshot)? {
+        // A `tell application` script launches the app if it is not running.
+        guard !NSRunningApplication.runningApplications(withBundleIdentifier: player.bundleIdentifier).isEmpty else {
+            return nil
+        }
+
         if player == .chrome, let snapshot = readChromeSnapshot() {
             return (player, snapshot)
         }
@@ -256,7 +305,7 @@ final class SystemMediaStore: ObservableObject {
         """
 
         var error: NSDictionary?
-        guard let result = NSAppleScript(source: script)?.executeAndReturnError(&error),
+        guard let result = cachedScript(script)?.executeAndReturnError(&error),
               result.numberOfItems == 7,
               let title = result.atIndex(1)?.stringValue,
               let artist = result.atIndex(2)?.stringValue,
@@ -288,7 +337,7 @@ final class SystemMediaStore: ObservableObject {
             appName: player.displayName,
             appBundleIdentifier: player.bundleIdentifier,
             appColor: player.color,
-            artwork: readArtwork(for: player),
+            artwork: cachedArtwork(for: player, trackKey: "\(title)\u{1F}\(artist)\u{1F}\(album)"),
             isPlaying: state == "playing",
             position: max(0, position),
             duration: max(0, durationInSeconds),
@@ -340,6 +389,16 @@ final class SystemMediaStore: ObservableObject {
         _ = NSAppleScript(source: script)?.executeAndReturnError(&error)
     }
 
+    private func cachedArtwork(for player: MediaPlayer, trackKey: String) -> NSImage? {
+        let key = "\(player.applicationName)\u{1F}\(trackKey)"
+        if let artworkCache, artworkCache.key == key, artworkCache.image != nil {
+            return artworkCache.image
+        }
+        let image = readArtwork(for: player)
+        artworkCache = (key, image)
+        return image
+    }
+
     private func readArtwork(for player: MediaPlayer) -> NSImage? {
         let script: String
         switch player {
@@ -370,7 +429,7 @@ final class SystemMediaStore: ObservableObject {
         }
 
         var error: NSDictionary?
-        guard let result = NSAppleScript(source: script)?.executeAndReturnError(&error) else {
+        guard let result = cachedScript(script)?.executeAndReturnError(&error) else {
             return nil
         }
 

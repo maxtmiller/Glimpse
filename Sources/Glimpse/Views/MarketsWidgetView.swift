@@ -456,7 +456,8 @@ struct GlimpseMarketsWidgetView: View {
                     } else {
                         MarketTickerStrip(
                             assets: trackedTickerAssets,
-                            selectedRange: selectedRange
+                            selectedRange: selectedRange,
+                            isActive: presentationProgress > 0.01
                         )
                         .frame(height: 28)
                         .offset(x: -10)
@@ -780,13 +781,14 @@ private struct MarketCurrencySummary: View {
 private struct MarketTickerStrip: View {
     let assets: [MarketAsset]
     let selectedRange: MarketTimeRange
+    let isActive: Bool
 
     private let itemWidth: CGFloat = 74
     private let itemSpacing: CGFloat = 5
     private let speed: CGFloat = 18
 
     var body: some View {
-        TimelineView(.periodic(from: Date(), by: 1.0 / 30.0)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 15.0, paused: !isActive)) { timeline in
             GeometryReader { geometry in
                 let stream = assets + assets
                 let contentWidth = CGFloat(assets.count) * itemWidth + CGFloat(max(assets.count - 1, 0)) * itemSpacing

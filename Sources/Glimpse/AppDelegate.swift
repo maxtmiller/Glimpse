@@ -33,9 +33,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         position(panel: panel)
         updateMouseInteraction()
 
-        mouseTrackingTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
+        mouseTrackingTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 15.0, repeats: true) { [weak self] _ in
             self?.updateMouseInteraction()
         }
+        mouseTrackingTimer?.tolerance = 0.03
         RunLoop.main.add(mouseTrackingTimer!, forMode: .common)
 
         globalClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { [weak self] _ in

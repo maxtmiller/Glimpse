@@ -14,9 +14,12 @@ struct GlimpseSoundsWidgetView: View {
     @State private var hoveredSpotifyTrackID: String?
     @State private var spotifyListMode: SpotifyListMode = .recentlyPlayed
     @State private var playbackClock = Date()
+    @State private var pulseOn = false
+    @AppStorage("glimpse.animatePulse") private var animatesPulse = false
 
     private let playbackTimer = Timer.publish(
-        every: 1.0 / 30.0,
+        every: 1.0,
+        tolerance: 0.2,
         on: .main,
         in: .common
     ).autoconnect()
@@ -28,7 +31,7 @@ struct GlimpseSoundsWidgetView: View {
 
         return min(
             media.duration,
-            max(0, media.position + playbackClock.timeIntervalSince(media.updatedAt))
+            max(0, media.position + max(0, playbackClock.timeIntervalSince(media.updatedAt)))
         )
     }
 
@@ -44,6 +47,8 @@ struct GlimpseSoundsWidgetView: View {
     var body: some View {
         playerContent
             .onReceive(playbackTimer) { now in
+                // Skipping the write while paused avoids a re-render per tick.
+                guard media?.isPlaying == true else { return }
                 playbackClock = now
             }
     }
@@ -296,41 +301,53 @@ struct GlimpseSoundsWidgetView: View {
     private var collapsedMediaHeader: some View {
         HStack(spacing: 10) {
             if media != nil {
-                TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
-                    let pulse = 1 + (sin(context.date.timeIntervalSinceReferenceDate * 3.2) + 1) * 0.025
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(progressTint.opacity(media?.isPlaying == true ? 0.26 : 0.12))
+                        .frame(width: 30, height: 30)
+                        .scaleEffect(pulseOn ? 1.05 : 1)
+                        .animation(
+                            media?.isPlaying == true
+                                ? .easeInOut(duration: 1).repeatForever(autoreverses: true)
+                                : .default,
+                            value: pulseOn
+                        )
+                        .opacity(media?.isPlaying == true ? 0.9 : 0.55)
 
                     ZStack {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(progressTint.opacity(media?.isPlaying == true ? 0.26 : 0.12))
-                            .frame(width: 30, height: 30)
-                            .scaleEffect(pulse)
-                            .opacity(media?.isPlaying == true ? 0.9 : 0.55)
+                        if let image = media?.artwork {
+                            Image(nsImage: image)
+                                .resizable()
+                                .scaledToFill()
+                        } else {
+                            LinearGradient(
+                                colors: [progressTint.opacity(0.88), .purple.opacity(0.62)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
 
-                        ZStack {
-                            if let image = media?.artwork {
-                                Image(nsImage: image)
-                                    .resizable()
-                                    .scaledToFill()
-                            } else {
-                                LinearGradient(
-                                    colors: [progressTint.opacity(0.88), .purple.opacity(0.62)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-
-                                Image(systemName: "waveform")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundStyle(.white.opacity(0.9))
-                            }
+                            Image(systemName: "waveform")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white.opacity(0.9))
                         }
-                        .frame(width: 28, height: 28)
-                        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .stroke(Color.white.opacity(0.22), lineWidth: 1)
-                        )
                     }
-                    .frame(width: 32, height: 32)
+                    .frame(width: 28, height: 28)
+                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .stroke(Color.white.opacity(0.22), lineWidth: 1)
+                    )
+                }
+                .frame(width: 32, height: 32)
+                .onAppear { pulseOn = media?.isPlaying == true && animatesPulse }
+                .onChange(of: animatesPulse) { enabled in
+                    pulseOn = media?.isPlaying == true && enabled
+                }
+                .onChange(of: media?.isPlaying == true) { playing in
+                    pulseOn = false
+                    if playing && animatesPulse {
+                        DispatchQueue.main.async { pulseOn = true }
+                    }
                 }
 
                 CollapsedSoundWave(isPlaying: media?.isPlaying == true, tint: progressTint)
@@ -470,42 +487,119 @@ private struct CollapsedSoundWave: View {
     let isPlaying: Bool
     let tint: Color
 
-    @State private var isAnimating = false
-
-    private let barHeights: [CGFloat] = [8, 15, 11, 18, 10]
+    @AppStorage("glimpse.animateSoundWave") private var animates = true
 
     var body: some View {
-        HStack(alignment: .center, spacing: 3) {
-            ForEach(Array(barHeights.enumerated()), id: \.offset) { index, height in
-                Capsule(style: .continuous)
-                    .fill(tint.opacity(isPlaying ? 0.92 : 0.48))
-                    .frame(width: 3, height: height)
-                    .scaleEffect(y: isPlaying && isAnimating ? 1 : 0.35, anchor: .center)
-                    .animation(
-                        isPlaying
-                            ? .easeInOut(duration: 0.42)
-                                .repeatForever(autoreverses: true)
-                                .delay(Double(index) * 0.09)
-                            : .easeOut(duration: 0.16),
-                        value: isAnimating
-                    )
+        SoundWaveBars(isPlaying: isPlaying, animates: animates, tint: NSColor(tint))
+            .frame(width: 30, height: 22)
+            .accessibilityLabel(isPlaying ? "Audio playing" : "Audio paused")
+    }
+}
+
+/// The bars animate with Core Animation so the render server drives the frames.
+/// A SwiftUI `repeatForever` animation re-runs the view graph and relayouts the
+/// whole hosting view every frame, which dominated Glimpse's CPU use.
+private struct SoundWaveBars: NSViewRepresentable {
+    let isPlaying: Bool
+    let animates: Bool
+    let tint: NSColor
+
+    func makeNSView(context: Context) -> SoundWaveBarsView {
+        SoundWaveBarsView()
+    }
+
+    func updateNSView(_ view: SoundWaveBarsView, context: Context) {
+        view.update(isPlaying: isPlaying, animates: animates, tint: tint)
+    }
+}
+
+private final class SoundWaveBarsView: NSView {
+    private static let barHeights: [CGFloat] = [8, 15, 11, 18, 10]
+    private static let barWidth: CGFloat = 3
+    private static let barSpacing: CGFloat = 3
+    private static let animationKey = "wave"
+
+    private let bars: [CALayer] = SoundWaveBarsView.barHeights.map { _ in CALayer() }
+    private var isPlaying = false
+    private var animates = true
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        for bar in bars {
+            bar.cornerRadius = Self.barWidth / 2
+            bar.cornerCurve = .continuous
+            layer?.addSublayer(bar)
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not supported")
+    }
+
+    override func layout() {
+        super.layout()
+        let count = CGFloat(bars.count)
+        let totalWidth = count * Self.barWidth + (count - 1) * Self.barSpacing
+        let startX = (bounds.width - totalWidth) / 2
+
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        for (index, bar) in bars.enumerated() {
+            bar.bounds = CGRect(x: 0, y: 0, width: Self.barWidth, height: Self.barHeights[index])
+            bar.position = CGPoint(
+                x: startX + CGFloat(index) * (Self.barWidth + Self.barSpacing) + Self.barWidth / 2,
+                y: bounds.midY
+            )
+        }
+        CATransaction.commit()
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        applyAnimation()
+    }
+
+    func update(isPlaying: Bool, animates: Bool, tint: NSColor) {
+        self.isPlaying = isPlaying
+        self.animates = animates
+
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        let color = tint.withAlphaComponent(isPlaying ? 0.92 : 0.48).cgColor
+        for bar in bars {
+            bar.backgroundColor = color
+        }
+        CATransaction.commit()
+
+        applyAnimation()
+    }
+
+    private func applyAnimation() {
+        let shouldAnimate = isPlaying && animates && window != nil
+        let restingScale: CGFloat = !isPlaying ? 0.35 : (animates ? 1 : 0.7)
+
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        for (index, bar) in bars.enumerated() {
+            bar.transform = CATransform3DMakeScale(1, restingScale, 1)
+
+            if !shouldAnimate {
+                bar.removeAnimation(forKey: Self.animationKey)
+            } else if bar.animation(forKey: Self.animationKey) == nil {
+                let animation = CABasicAnimation(keyPath: "transform.scale.y")
+                animation.fromValue = 0.35
+                animation.toValue = 1
+                animation.duration = 0.42
+                animation.autoreverses = true
+                animation.repeatCount = .infinity
+                animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                animation.beginTime = bar.convertTime(CACurrentMediaTime(), from: nil) + Double(index) * 0.09
+                animation.fillMode = .backwards
+                bar.add(animation, forKey: Self.animationKey)
             }
         }
-        .frame(width: 30, height: 22)
-        .onAppear {
-            isAnimating = isPlaying
-        }
-        .onChange(of: isPlaying) { playing in
-            if playing {
-                isAnimating = false
-                DispatchQueue.main.async {
-                    isAnimating = true
-                }
-            } else {
-                isAnimating = false
-            }
-        }
-        .accessibilityLabel(isPlaying ? "Audio playing" : "Audio paused")
+        CATransaction.commit()
     }
 }
 
